@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { products } from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 import ProductCard from '../components/ProductCard'
 import Banner from '../components/Banner'
 import FlashSale from '../components/FlashSale'
@@ -14,6 +14,7 @@ const catIcons = [
 ]
 
 export default function Home() {
+  const { products } = useProducts()
   const joias     = products.filter(p => p.category !== 'camisetas').slice(0, 4)
   const camisetas = products.filter(p => p.category === 'camisetas')
   const recomendados = products.slice(0)

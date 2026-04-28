@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { CartProvider } from './context/CartContext'
+import { ProductsProvider } from './context/ProductsContext'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Cart from './components/Cart'
@@ -8,6 +9,8 @@ import Home from './pages/Home'
 import Products from './pages/Products'
 import ProductDetail from './pages/ProductDetail'
 import About from './pages/About'
+import Admin from './pages/Admin'
+import AdminLogin from './pages/AdminLogin'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -15,19 +18,34 @@ function ScrollToTop() {
   return null
 }
 
-export default function App() {
+function StoreLayout({ children }) {
   return (
-    <CartProvider>
-      <ScrollToTop />
+    <>
       <Header />
       <Cart />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/produtos" element={<Products />} />
-        <Route path="/produto/:id" element={<ProductDetail />} />
-        <Route path="/sobre" element={<About />} />
-      </Routes>
+      {children}
       <Footer />
-    </CartProvider>
+    </>
+  )
+}
+
+export default function App() {
+  return (
+    <ProductsProvider>
+      <CartProvider>
+        <ScrollToTop />
+        <Routes>
+          {/* Admin routes — sem header/footer da loja */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<Admin />} />
+
+          {/* Store routes */}
+          <Route path="/" element={<StoreLayout><Home /></StoreLayout>} />
+          <Route path="/produtos" element={<StoreLayout><Products /></StoreLayout>} />
+          <Route path="/produto/:id" element={<StoreLayout><ProductDetail /></StoreLayout>} />
+          <Route path="/sobre" element={<StoreLayout><About /></StoreLayout>} />
+        </Routes>
+      </CartProvider>
+    </ProductsProvider>
   )
 }

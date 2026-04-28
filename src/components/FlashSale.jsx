@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { products } from '../data/products'
+import { useProducts } from '../context/ProductsContext'
 
 function pad(n) { return String(n).padStart(2, '0') }
 
@@ -21,6 +21,7 @@ export default function FlashSale() {
     return () => clearInterval(t)
   }, [])
 
+  const { products } = useProducts()
   const flash = products.filter(p => p.originalPrice).slice(0, 4)
 
   return (
