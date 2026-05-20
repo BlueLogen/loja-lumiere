@@ -59,6 +59,15 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   flex-shrink: 0;
 }
 .header__logo-icon { color: var(--gold); font-size: 0.9rem; }
+.header__logo-img {
+  height: 46px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  background: var(--white);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
 .header__search {
   flex: 1;
   display: flex;
@@ -881,6 +890,16 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--white); margin-bottom: 10px;
 }
 .footer__logo-icon { color: var(--gold); }
+.footer__logo-img {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  background: var(--white);
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin-bottom: 12px;
+}
 .footer__brand p { font-size: 12px; line-height: 1.7; margin-bottom: 16px; }
 .footer__socials { display: flex; gap: 14px; }
 .footer__socials a { color: rgba(255,255,255,0.4); transition: color 0.2s; }
@@ -1462,6 +1481,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   justify-content: center;
 }
 .admin-login__logo span { color: var(--gold); }
+.admin-login__logo-img {
+  height: 90px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+.admin-header__logo-img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  background: var(--white);
+  border-radius: 5px;
+  padding: 2px 5px;
+}
 .admin-login__card h2 {
   font-family: var(--font-serif);
   font-size: 1.1rem;

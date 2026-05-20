@@ -28,8 +28,7 @@ export default function AdminLogin() {
     <div className="admin-login">
       <div className="admin-login__card">
         <div className="admin-login__logo">
-          <span>✦</span>
-          <strong>Lumière</strong>
+          <img src="/logo.png" alt="Basic & Bijus" className="admin-login__logo-img" />
         </div>
         <h2>Painel Administrativo</h2>
         <form onSubmit={handleSubmit}>

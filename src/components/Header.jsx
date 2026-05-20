@@ -18,8 +18,7 @@ export default function Header() {
       <header className="header">
         <div className="header__top">
           <Link to="/" className="header__logo">
-            <span className="header__logo-icon">✦</span>
-            <span>Lumière</span>
+            <img src="/logo.png" alt="Basic & Bijus" className="header__logo-img" />
           </Link>
 
           <form className="header__search" onSubmit={handleSearch}>

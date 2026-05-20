@@ -382,7 +382,7 @@ export default function Admin() {
     <div className="admin-page">
       <div className="admin-header">
         <div className="admin-header__brand">
-          <span>✦</span>
+          <img src="/logo.png" alt="Basic & Bijus" className="admin-header__logo-img" />
           <h1>Admin</h1>
         </div>
         <div className="admin-header__actions">

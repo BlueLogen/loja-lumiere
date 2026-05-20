@@ -6,8 +6,7 @@ export default function Footer() {
       <div className="footer__inner">
         <div className="footer__brand">
           <div className="footer__logo">
-            <span className="footer__logo-icon">✦</span>
-            <span>Lumière</span>
+            <img src="/logo.png" alt="Basic & Bijus" className="footer__logo-img" />
           </div>
           <p>Joias que contam histórias, beleza que ilumina momentos.</p>
           <div className="footer__socials">
