@@ -51,12 +51,12 @@ export default function Home() {
       <Link to="/produtos?cat=camisetas" className="promo-banner">
         <img
           src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80"
-          alt="Camisetas Lumière"
+          alt="Camisetas Basic & Bijus"
         />
         <div className="promo-banner__overlay" />
         <div className="promo-banner__content">
           <p className="promo-banner__eyebrow">Nova linha</p>
-          <h3 className="promo-banner__title">Camisetas<br />Lumière</h3>
+          <h3 className="promo-banner__title">Camisetas<br />Basic & Bijus</h3>
           <span className="promo-banner__cta">Ver coleção →</span>
         </div>
       </Link>

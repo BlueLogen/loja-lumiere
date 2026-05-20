@@ -8,7 +8,10 @@
       "Bash(gh auth *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git rm *)",
+      "Bash(cp \"/c/Users/Casa/Downloads/Gemini_Generated_Image_4a78z24a78z24a78.png\" \"/c/Users/Casa/Desktop/loja_de_biju/public/logo.png\")",
+      "Bash(git push *)"
     ]
   }
 }

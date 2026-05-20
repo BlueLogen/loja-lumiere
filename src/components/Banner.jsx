@@ -8,15 +8,15 @@ const slides = [
     label: 'Nova Coleção 2025',
     cta: 'Ver Coleção',
     link: '/produtos',
-    accent: '#c9a84c',
+    accent: '#a8c4e8',
   },
   {
     id: 2,
     img: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&q=80',
-    label: 'Até 30% OFF em Colares',
+    label: 'Até 30% OFF em Joias',
     cta: 'Aproveitar',
     link: '/produtos?cat=colares',
-    accent: '#e8d08a',
+    accent: '#fff',
   },
   {
     id: 3,

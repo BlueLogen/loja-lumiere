@@ -132,7 +132,7 @@ export const products = [
   // ─── CAMISETAS ───
   {
     id: 9,
-    name: 'Camiseta Lumière Gold',
+    name: 'Camiseta Basic & Bijus Gold',
     category: 'camisetas',
     price: 89,
     originalPrice: 119,
@@ -141,7 +141,7 @@ export const products = [
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
       'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80',
     ],
-    description: 'Camiseta 100% algodão premium com estampa dourada exclusiva da Lumière. Corte regular unissex, disponível em P, M, G e GG.',
+    description: 'Camiseta 100% algodão premium com estampa dourada exclusiva da Basic & Bijus. Corte regular unissex, disponível em P, M, G e GG.',
     badge: 'Promoção',
     badgeColor: '#c9a84c',
     featured: true,
@@ -177,7 +177,7 @@ export const products = [
     images: [
       'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&q=80',
     ],
-    description: 'Camiseta preta com logo Lumière em relevo dourado. Minimalista e sofisticada, combina com qualquer look.',
+    description: 'Camiseta preta com logo Basic & Bijus em relevo dourado. Minimalista e sofisticada, combina com qualquer look.',
     badge: 'Mais vendida',
     badgeColor: '#8b1a1a',
     featured: false,
@@ -232,7 +232,7 @@ export const products = [
     images: [
       'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=800&q=80',
     ],
-    description: 'Kit com 2 camisetas básicas (branca + preta) com logo Lumière. Economize mais comprando o conjunto.',
+    description: 'Kit com 2 camisetas básicas (branca + preta) com logo Basic & Bijus. Economize mais comprando o conjunto.',
     badge: 'Kit',
     badgeColor: '#5c3d1a',
     featured: false,

@@ -8,7 +8,7 @@ export default function Footer() {
           <div className="footer__logo">
             <img src="/logo.png" alt="Basic & Bijus" className="footer__logo-img" />
           </div>
-          <p>Joias que contam histórias, beleza que ilumina momentos.</p>
+          <p>Joias e moda que contam histórias,<br />beleza que ilumina cada momento.</p>
           <div className="footer__socials">
             <a href="#" aria-label="Instagram">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -28,6 +28,7 @@ export default function Footer() {
         <div className="footer__links">
           <h4>Coleção</h4>
           <Link to="/produtos">Todos</Link>
+          <Link to="/produtos?cat=camisetas">Camisetas</Link>
           <Link to="/produtos?cat=colares">Colares</Link>
           <Link to="/produtos?cat=brincos">Brincos</Link>
           <Link to="/produtos?cat=aneis">Anéis</Link>
@@ -44,7 +45,7 @@ export default function Footer() {
       </div>
 
       <div className="footer__bottom">
-        <p>© 2025 Lumière Joias · Feito com amor ✦</p>
+        <p>© 2025 Basic & Bijus · Feito com amor 💎</p>
       </div>
     </footer>
   )
