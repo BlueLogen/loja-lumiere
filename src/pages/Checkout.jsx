@@ -1,9 +1,61 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
 
+// ── Tabela de frete por UF ──────────────────────────────────
+const FRETE_UF = {
+  SP: 12.90,
+  MG: 15.90, RJ: 15.90, ES: 15.90,
+  PR: 15.90, SC: 15.90, RS: 15.90,
+  GO: 19.90, MT: 19.90, MS: 19.90, DF: 19.90,
+  BA: 22.90, PE: 22.90, CE: 22.90, MA: 22.90,
+  PB: 22.90, RN: 22.90, AL: 22.90, SE: 22.90, PI: 22.90,
+  PA: 24.90, AM: 24.90, TO: 24.90, RO: 24.90,
+  AC: 29.90, RR: 29.90, AP: 29.90,
+}
+
+function calcFrete(estado, subtotal) {
+  if (subtotal >= 299) return 0
+  if (!estado) return null
+  return FRETE_UF[estado] ?? 24.90
+}
+
+function freteInfo(estado, subtotal) {
+  if (subtotal >= 299) return { label: 'Grátis 🎉', value: 0, free: true }
+  if (!estado) return { label: 'Informe o CEP', value: null, free: false }
+  const v = FRETE_UF[estado] ?? 24.90
+  return { label: `R$ ${v.toFixed(2).replace('.', ',')}`, value: v, free: false }
+}
+
+// ── Máscaras ──────────────────────────────────────────────
+function maskCep(v) {
+  const d = v.replace(/\D/g, '').slice(0, 8)
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d
+}
+function maskCpf(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`
+  if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`
+  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`
+}
+function maskPhone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d.length ? `(${d}` : d
+  if (d.length <= 7) return `(${d.slice(0,2)}) ${d.slice(2)}`
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`
+}
+function maskCard(v) {
+  return v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+}
+function maskExp(v) {
+  const d = v.replace(/\D/g, '').slice(0, 4)
+  return d.length > 2 ? `${d.slice(0,2)}/${d.slice(2)}` : d
+}
+
+// ── StepBar ───────────────────────────────────────────────
 function StepBar({ current }) {
   return (
     <div className="checkout-steps">
@@ -20,7 +72,11 @@ function StepBar({ current }) {
   )
 }
 
-function OrderSummary({ items, total }) {
+// ── OrderSummary ──────────────────────────────────────────
+function OrderSummary({ items, subtotal, estado }) {
+  const frete = freteInfo(estado, subtotal)
+  const finalTotal = frete.value !== null ? subtotal + frete.value : null
+
   return (
     <div className="checkout-summary">
       <h3 className="checkout-summary__title">Resumo do pedido</h3>
@@ -42,25 +98,66 @@ function OrderSummary({ items, total }) {
       <div className="checkout-summary__totals">
         <div className="checkout-summary__row">
           <span>Subtotal</span>
-          <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+          <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
         </div>
         <div className="checkout-summary__row">
           <span>Frete</span>
-          <span className={total >= 299 ? 'free-shipping' : ''}>
-            {total >= 299 ? 'Grátis 🎉' : 'R$ 19,90'}
+          <span className={frete.free ? 'free-shipping' : frete.value === null ? 'frete-pending' : ''}>
+            {frete.label}
           </span>
         </div>
         <div className="checkout-summary__row checkout-summary__row--total">
           <span>Total</span>
-          <strong>R$ {(total >= 299 ? total : total + 19.9).toFixed(2).replace('.', ',')}</strong>
+          <strong>
+            {finalTotal !== null
+              ? `R$ ${finalTotal.toFixed(2).replace('.', ',')}`
+              : '—'}
+          </strong>
         </div>
       </div>
     </div>
   )
 }
 
-// ── STEP 1: ENTREGA ──────────────────────────────────────
-function StepEntrega({ data, onChange, onNext }) {
+// ── STEP 1: ENTREGA ───────────────────────────────────────
+function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cepError, setCepError]     = useState('')
+  const cepRef = useRef(null)
+
+  const frete = freteInfo(data.estado, subtotal)
+
+  async function buscarCep(raw) {
+    const digits = raw.replace(/\D/g, '')
+    if (digits.length !== 8) return
+    setCepLoading(true)
+    setCepError('')
+    try {
+      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      const json = await res.json()
+      if (json.erro) {
+        setCepError('CEP não encontrado. Verifique e tente novamente.')
+      } else {
+        onBulkChange({
+          rua:    json.logradouro || '',
+          bairro: json.bairro     || '',
+          cidade: json.localidade || '',
+          estado: json.uf         || '',
+        })
+      }
+    } catch {
+      setCepError('Erro ao consultar CEP. Verifique sua conexão.')
+    } finally {
+      setCepLoading(false)
+    }
+  }
+
+  function handleCepChange(e) {
+    const masked = maskCep(e.target.value)
+    onChange('cep', masked)
+    if (masked.replace(/\D/g, '').length === 8) buscarCep(masked)
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     onNext()
@@ -73,55 +170,79 @@ function StepEntrega({ data, onChange, onNext }) {
         <div className="checkout-field-row">
           <div className="checkout-field">
             <label>Nome completo *</label>
-            <input required placeholder="Seu nome" value={data.nome} onChange={e => onChange('nome', e.target.value)} />
+            <input required placeholder="Seu nome" value={data.nome}
+              onChange={e => onChange('nome', e.target.value)} />
           </div>
           <div className="checkout-field">
             <label>CPF *</label>
-            <input required placeholder="000.000.000-00" value={data.cpf} onChange={e => onChange('cpf', e.target.value)} />
+            <input required placeholder="000.000.000-00" value={data.cpf}
+              onChange={e => onChange('cpf', maskCpf(e.target.value))} />
           </div>
         </div>
         <div className="checkout-field-row">
           <div className="checkout-field">
             <label>E-mail *</label>
-            <input required type="email" placeholder="seu@email.com" value={data.email} onChange={e => onChange('email', e.target.value)} />
+            <input required type="email" placeholder="seu@email.com" value={data.email}
+              onChange={e => onChange('email', e.target.value)} />
           </div>
           <div className="checkout-field">
             <label>Telefone *</label>
-            <input required placeholder="(00) 00000-0000" value={data.telefone} onChange={e => onChange('telefone', e.target.value)} />
+            <input required placeholder="(00) 00000-0000" value={data.telefone}
+              onChange={e => onChange('telefone', maskPhone(e.target.value))} />
           </div>
         </div>
       </div>
 
       <div className="checkout-form__section">
         <h3>Endereço de entrega</h3>
+
         <div className="checkout-field-row">
           <div className="checkout-field checkout-field--sm">
             <label>CEP *</label>
-            <input required placeholder="00000-000" value={data.cep} onChange={e => onChange('cep', e.target.value)} />
+            <div className="cep-wrapper">
+              <input
+                ref={cepRef}
+                required
+                placeholder="00000-000"
+                value={data.cep}
+                onChange={handleCepChange}
+                maxLength={9}
+                className={cepError ? 'input--error' : ''}
+              />
+              {cepLoading && <span className="cep-spinner" />}
+            </div>
+            {cepError && <span className="field-error">{cepError}</span>}
           </div>
           <div className="checkout-field checkout-field--lg">
             <label>Rua / Logradouro *</label>
-            <input required placeholder="Rua das Flores" value={data.rua} onChange={e => onChange('rua', e.target.value)} />
+            <input required placeholder="Rua das Flores" value={data.rua}
+              onChange={e => onChange('rua', e.target.value)} />
           </div>
         </div>
+
         <div className="checkout-field-row">
           <div className="checkout-field checkout-field--sm">
             <label>Número *</label>
-            <input required placeholder="123" value={data.numero} onChange={e => onChange('numero', e.target.value)} />
+            <input required placeholder="123" value={data.numero}
+              onChange={e => onChange('numero', e.target.value)} />
           </div>
           <div className="checkout-field">
             <label>Complemento</label>
-            <input placeholder="Apto, bloco..." value={data.complemento} onChange={e => onChange('complemento', e.target.value)} />
+            <input placeholder="Apto, bloco..." value={data.complemento}
+              onChange={e => onChange('complemento', e.target.value)} />
           </div>
           <div className="checkout-field">
             <label>Bairro *</label>
-            <input required placeholder="Seu bairro" value={data.bairro} onChange={e => onChange('bairro', e.target.value)} />
+            <input required placeholder="Seu bairro" value={data.bairro}
+              onChange={e => onChange('bairro', e.target.value)} />
           </div>
         </div>
+
         <div className="checkout-field-row">
           <div className="checkout-field">
             <label>Cidade *</label>
-            <input required placeholder="Sua cidade" value={data.cidade} onChange={e => onChange('cidade', e.target.value)} />
+            <input required placeholder="Sua cidade" value={data.cidade}
+              onChange={e => onChange('cidade', e.target.value)} />
           </div>
           <div className="checkout-field checkout-field--sm">
             <label>Estado *</label>
@@ -133,18 +254,32 @@ function StepEntrega({ data, onChange, onNext }) {
             </select>
           </div>
         </div>
+
+        {/* Frete calculado */}
+        {data.estado && (
+          <div className={`frete-badge${frete.free ? ' frete-badge--free' : ''}`}>
+            <span className="frete-badge__icon">{frete.free ? '🎉' : '🚚'}</span>
+            <div>
+              <strong>{frete.free ? 'Frete Grátis!' : `Frete: ${frete.label}`}</strong>
+              {frete.free
+                ? <small>Parabéns! Seu pedido tem frete grátis.</small>
+                : <small>Entrega de 3 a 7 dias úteis para {data.cidade}/{data.estado}</small>
+              }
+            </div>
+          </div>
+        )}
       </div>
 
-      <button type="submit" className="btn btn--gold btn--full btn--lg">
-        Continuar para pagamento →
+      <button type="submit" className="btn btn--gold btn--full btn--lg" disabled={cepLoading}>
+        {cepLoading ? 'Buscando CEP...' : 'Continuar para pagamento →'}
       </button>
     </form>
   )
 }
 
 // ── STEP 2: PAGAMENTO ─────────────────────────────────────
-function StepPagamento({ data, onChange, onNext, onBack, total }) {
-  const finalTotal = total >= 299 ? total : total + 19.9
+function StepPagamento({ data, onChange, onNext, onBack, subtotal, frete }) {
+  const finalTotal = subtotal + (frete ?? 0)
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -162,13 +297,9 @@ function StepPagamento({ data, onChange, onNext, onBack, total }) {
             { id: 'boleto', icon: '📄', label: 'Boleto bancário',   sub: 'vence em 3 dias' },
           ].map(m => (
             <label key={m.id} className={`payment-option${data.metodo === m.id ? ' active' : ''}`}>
-              <input
-                type="radio"
-                name="metodo"
-                value={m.id}
+              <input type="radio" name="metodo" value={m.id}
                 checked={data.metodo === m.id}
-                onChange={() => onChange('metodo', m.id)}
-              />
+                onChange={() => onChange('metodo', m.id)} />
               <span className="payment-option__icon">{m.icon}</span>
               <span className="payment-option__text">
                 <strong>{m.label}</strong>
@@ -184,20 +315,28 @@ function StepPagamento({ data, onChange, onNext, onBack, total }) {
           <h3>Dados do cartão</h3>
           <div className="checkout-field">
             <label>Número do cartão *</label>
-            <input required placeholder="0000 0000 0000 0000" maxLength={19} value={data.cardNum || ''} onChange={e => onChange('cardNum', e.target.value)} />
+            <input required placeholder="0000 0000 0000 0000" maxLength={19}
+              value={data.cardNum || ''}
+              onChange={e => onChange('cardNum', maskCard(e.target.value))} />
           </div>
           <div className="checkout-field">
             <label>Nome no cartão *</label>
-            <input required placeholder="Como está no cartão" value={data.cardName || ''} onChange={e => onChange('cardName', e.target.value)} />
+            <input required placeholder="Como está no cartão"
+              value={data.cardName || ''}
+              onChange={e => onChange('cardName', e.target.value.toUpperCase())} />
           </div>
           <div className="checkout-field-row">
             <div className="checkout-field">
               <label>Validade *</label>
-              <input required placeholder="MM/AA" maxLength={5} value={data.cardExp || ''} onChange={e => onChange('cardExp', e.target.value)} />
+              <input required placeholder="MM/AA" maxLength={5}
+                value={data.cardExp || ''}
+                onChange={e => onChange('cardExp', maskExp(e.target.value))} />
             </div>
             <div className="checkout-field checkout-field--sm">
               <label>CVV *</label>
-              <input required placeholder="000" maxLength={4} value={data.cardCvv || ''} onChange={e => onChange('cardCvv', e.target.value)} />
+              <input required placeholder="000" maxLength={4}
+                value={data.cardCvv || ''}
+                onChange={e => onChange('cardCvv', e.target.value.replace(/\D/g, ''))} />
             </div>
             <div className="checkout-field">
               <label>Parcelas</label>
@@ -219,7 +358,10 @@ function StepPagamento({ data, onChange, onNext, onBack, total }) {
                 <svg viewBox="0 0 100 100" width="120" height="120">
                   <rect width="100" height="100" fill="white"/>
                   {[0,20,40,60,80].map(x => [0,20,40,60,80].map(y => (
-                    <rect key={`${x}-${y}`} x={x+2} y={y+2} width={Math.random() > 0.5 ? 14 : 8} height={Math.random() > 0.5 ? 14 : 8} fill="#0d2347" rx="1"/>
+                    <rect key={`${x}-${y}`} x={x+2} y={y+2}
+                      width={((x * 3 + y) % 3 === 0) ? 14 : 8}
+                      height={((x + y * 2) % 3 === 0) ? 14 : 8}
+                      fill="#0d2347" rx="1"/>
                   )))}
                 </svg>
               </div>
@@ -255,10 +397,9 @@ function StepPagamento({ data, onChange, onNext, onBack, total }) {
 }
 
 // ── STEP 3: CONFIRMAÇÃO ───────────────────────────────────
-function StepConfirmacao({ entrega, pagamento, items, total }) {
-  const finalTotal = total >= 299 ? total : total + 19.9
-  const orderNum = String(Math.floor(Math.random() * 900000) + 100000)
-
+function StepConfirmacao({ entrega, pagamento, items, subtotal, frete }) {
+  const finalTotal = subtotal + (frete ?? 0)
+  const orderNum   = useRef(String(Math.floor(Math.random() * 900000) + 100000)).current
   const metodoLabel = { cartao: 'Cartão de crédito', pix: 'PIX', boleto: 'Boleto bancário' }
 
   return (
@@ -275,11 +416,18 @@ function StepConfirmacao({ entrega, pagamento, items, total }) {
         </div>
         <div className="checkout-success__row">
           <span>Endereço</span>
-          <strong>{entrega.rua}, {entrega.numero} — {entrega.bairro}, {entrega.cidade}/{entrega.estado}</strong>
+          <strong>{entrega.rua}, {entrega.numero}{entrega.complemento ? ` — ${entrega.complemento}` : ''}<br/>{entrega.bairro}, {entrega.cidade}/{entrega.estado} · CEP {entrega.cep}</strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Frete</span>
+          <strong className={frete === 0 ? 'free-shipping' : ''}>
+            {frete === 0 ? 'Grátis 🎉' : `R$ ${frete.toFixed(2).replace('.', ',')}`}
+          </strong>
         </div>
         <div className="checkout-success__row">
           <span>Pagamento</span>
-          <strong>{metodoLabel[pagamento.metodo] || pagamento.metodo}
+          <strong>
+            {metodoLabel[pagamento.metodo] || pagamento.metodo}
             {pagamento.metodo === 'cartao' && pagamento.parcelas > 1 ? ` · ${pagamento.parcelas}x` : ''}
             {pagamento.metodo === 'pix' ? ' · 5% OFF' : ''}
           </strong>
@@ -321,10 +469,18 @@ export default function Checkout() {
     cep: '', rua: '', numero: '', complemento: '',
     bairro: '', cidade: '', estado: '',
   })
-
   const [pagamento, setPagamento] = useState({
     metodo: '', cardNum: '', cardName: '', cardExp: '', cardCvv: '', parcelas: '1',
   })
+
+  const frete = calcFrete(entrega.estado, total)
+
+  function handleEntregaChange(field, val) {
+    setEntrega(p => ({ ...p, [field]: val }))
+  }
+  function handleEntregaBulk(fields) {
+    setEntrega(p => ({ ...p, ...fields }))
+  }
 
   if (items.length === 0 && step < 2) {
     return (
@@ -355,8 +511,10 @@ export default function Checkout() {
           {step === 0 && (
             <StepEntrega
               data={entrega}
-              onChange={(field, val) => setEntrega(p => ({ ...p, [field]: val }))}
+              onChange={handleEntregaChange}
+              onBulkChange={handleEntregaBulk}
               onNext={() => setStep(1)}
+              subtotal={total}
             />
           )}
           {step === 1 && (
@@ -365,7 +523,8 @@ export default function Checkout() {
               onChange={(field, val) => setPagamento(p => ({ ...p, [field]: val }))}
               onNext={() => { setStep(2); setOpen(false); clearCart() }}
               onBack={() => setStep(0)}
-              total={total}
+              subtotal={total}
+              frete={frete ?? 0}
             />
           )}
           {step === 2 && (
@@ -373,14 +532,15 @@ export default function Checkout() {
               entrega={entrega}
               pagamento={pagamento}
               items={items}
-              total={total}
+              subtotal={total}
+              frete={frete ?? 0}
             />
           )}
         </div>
 
         {step < 2 && (
           <div className="checkout-aside">
-            <OrderSummary items={items} total={total} />
+            <OrderSummary items={items} subtotal={total} estado={entrega.estado} />
           </div>
         )}
       </div>

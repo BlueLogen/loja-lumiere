@@ -1895,6 +1895,45 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   border-radius: 8px;
 }
 
+/* CEP lookup */
+.cep-wrapper { position: relative; }
+.cep-wrapper input { width: 100%; }
+.cep-spinner {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+.field-error { font-size: .72rem; color: #c0392b; margin-top: 2px; }
+.input--error { border-color: #c0392b !important; }
+
+/* Frete badge */
+.frete-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0f7f4;
+  border: 1.5px solid #a8d5c2;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 12px;
+}
+.frete-badge--free {
+  background: #f0faf5;
+  border-color: #2d6a4f;
+}
+.frete-badge__icon { font-size: 1.4rem; }
+.frete-badge strong { display: block; font-size: .85rem; color: var(--navy-dark); }
+.frete-badge small  { font-size: .73rem; color: var(--gray); }
+.frete-pending { color: var(--gray); font-style: italic; }
+
 /* Buttons (reuse existing .btn classes + extras) */
 .btn--full { width: 100%; text-align: center; justify-content: center; }
 .btn--lg { padding: 13px 20px; font-size: .95rem; }
