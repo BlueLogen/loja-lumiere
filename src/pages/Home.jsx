@@ -44,12 +44,26 @@ const IconEarring = () => (
 
 const IconRing = () => (
   <svg viewBox="0 0 32 32">
-    <ellipse cx="16" cy="22" rx="8" ry="5" fill="none" stroke="#a78bfa" strokeWidth="3"/>
-    <path d="M12 22l1.5-9 2.5-4 2.5 4 1.5 9" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M13 13.5L16 10l3 3.5" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M13 13.5L16 10l3 3.5L16 17z" fill="#c4b5fd"/>
-    <circle cx="16" cy="11" r="2" fill="#7c3aed"/>
-    <circle cx="15.2" cy="10.3" r=".7" fill="white" opacity=".8"/>
+    {/* Banda do anel — meia-lua grossa */}
+    <path d="M7 21 Q7 29 16 29 Q25 29 25 21"
+      stroke="#8b5cf6" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+    {/* Brilho interno da banda */}
+    <path d="M10 21 Q10 26 16 26 Q22 26 22 21"
+      stroke="#ddd6fe" strokeWidth="1.4" fill="none" strokeLinecap="round"/>
+    {/* Hastes laterais subindo ao engaste */}
+    <line x1="8.2" y1="21" x2="12.5" y2="13" stroke="#8b5cf6" strokeWidth="3.2" strokeLinecap="round"/>
+    <line x1="23.8" y1="21" x2="19.5" y2="13" stroke="#8b5cf6" strokeWidth="3.2" strokeLinecap="round"/>
+    {/* Diamante */}
+    <path d="M12.5 13 L16 7.5 L19.5 13 L16 19 Z" fill="#a78bfa"/>
+    {/* Faceta inferior */}
+    <path d="M12.5 13 L16 16.5 L19.5 13" fill="#6d28d9" opacity=".7"/>
+    {/* Linha central */}
+    <line x1="16" y1="7.5" x2="16" y2="16.5" stroke="#c4b5fd" strokeWidth=".9" opacity=".6"/>
+    {/* Brilho no diamante */}
+    <circle cx="14" cy="9.5" r="1.3" fill="white" opacity=".85"/>
+    {/* Estrelinhas douradas */}
+    <line x1="22" y1="6.5" x2="22" y2="9.5" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round"/>
+    <line x1="20.5" y1="8" x2="23.5" y2="8" stroke="#fbbf24" strokeWidth="1.4" strokeLinecap="round"/>
   </svg>
 )
 
