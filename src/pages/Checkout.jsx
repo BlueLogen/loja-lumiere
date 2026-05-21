@@ -4,6 +4,50 @@ import { useCart } from '../context/CartContext'
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
 
+// ── Explosão de emojis ─────────────────────────────────────
+const BURST_EMOJIS = ['❤️','💛','🧡','💜','💕','💖','💗','💝','💘','🎉','✨','💫','🌟','❤️‍🔥','💓','💞','🩷','💚','🤍','😍','🥰','💎','⭐','🎊']
+
+function spawnEmojiExplosion(originEl, onDone) {
+  const rect = originEl.getBoundingClientRect()
+  const cx   = rect.left + rect.width  / 2
+  const cy   = rect.top  + rect.height / 2
+  const count = 40
+
+  const wrap = document.createElement('div')
+  wrap.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden;'
+  document.body.appendChild(wrap)
+
+  for (let i = 0; i < count; i++) {
+    const el    = document.createElement('span')
+    const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.7
+    const dist  = 100 + Math.random() * 220
+    const dx    = Math.cos(angle) * dist
+    const dy    = Math.sin(angle) * dist - 80   // puxa levemente para cima
+    const size  = 20 + Math.random() * 22
+    const dur   = 650 + Math.random() * 500
+    const delay = Math.random() * 120
+
+    el.textContent = BURST_EMOJIS[Math.floor(Math.random() * BURST_EMOJIS.length)]
+    el.style.cssText = `
+      position:absolute;
+      left:${cx}px; top:${cy}px;
+      font-size:${size}px;
+      line-height:1;
+      user-select:none;
+      animation: emojiBurst ${dur}ms cubic-bezier(.2,.6,.35,1) ${delay}ms forwards;
+      --ex:${dx}px; --ey:${dy}px;
+    `
+    wrap.appendChild(el)
+  }
+
+  // Botão pulsa
+  originEl.style.transition = 'transform .15s'
+  originEl.style.transform  = 'scale(1.08)'
+  setTimeout(() => { originEl.style.transform = 'scale(1)' }, 150)
+
+  setTimeout(() => { wrap.remove(); onDone() }, 1100)
+}
+
 // ── Tabela de frete por UF ──────────────────────────────────
 const FRETE_UF = {
   SP: 12.90,
@@ -123,7 +167,9 @@ function OrderSummary({ items, subtotal, estado }) {
 function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError, setCepError]     = useState('')
+  const [bursting, setBursting]     = useState(false)
   const cepRef = useRef(null)
+  const btnRef = useRef(null)
 
   const frete = freteInfo(data.estado, subtotal)
 
@@ -160,7 +206,12 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
 
   function handleSubmit(e) {
     e.preventDefault()
-    onNext()
+    if (bursting) return
+    setBursting(true)
+    spawnEmojiExplosion(btnRef.current, () => {
+      setBursting(false)
+      onNext()
+    })
   }
 
   return (
@@ -270,8 +321,8 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
         )}
       </div>
 
-      <button type="submit" className="btn btn--gold btn--full btn--lg" disabled={cepLoading}>
-        {cepLoading ? 'Buscando CEP...' : 'Continuar para pagamento →'}
+      <button ref={btnRef} type="submit" className={`btn btn--gold btn--full btn--lg${bursting ? ' btn--bursting' : ''}`} disabled={cepLoading || bursting}>
+        {cepLoading ? 'Buscando CEP...' : bursting ? '🎉 Ótimo!' : 'Continuar para pagamento →'}
       </button>
     </form>
   )

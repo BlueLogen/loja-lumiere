@@ -1895,6 +1895,31 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   border-radius: 8px;
 }
 
+/* Emoji burst animation */
+@keyframes emojiBurst {
+  0%   {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+  }
+  25%  {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--ex) * .35), calc(-50% + var(--ey) * .35)) scale(1.3) rotate(120deg);
+  }
+  70%  {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--ex) * .8), calc(-50% + var(--ey) * .8)) scale(1) rotate(240deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--ex)), calc(-50% + var(--ey))) scale(0.4) rotate(360deg);
+  }
+}
+.btn--bursting {
+  background: linear-gradient(135deg, #f0d98b, var(--gold)) !important;
+  transform: scale(1.06) !important;
+  box-shadow: 0 0 32px rgba(201,168,76,.6) !important;
+}
+
 /* CEP lookup */
 .cep-wrapper { position: relative; }
 .cep-wrapper input { width: 100%; }
