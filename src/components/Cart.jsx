@@ -1,7 +1,9 @@
 import { useCart } from '../context/CartContext'
+import { useNavigate } from 'react-router-dom'
 
 export default function Cart() {
   const { items, removeItem, updateQty, total, open, setOpen } = useCart()
+  const navigate = useNavigate()
 
   return (
     <>
@@ -43,7 +45,7 @@ export default function Cart() {
                 <span>Total</span>
                 <strong>R$ {total.toFixed(2).replace('.', ',')}</strong>
               </div>
-              <button className="btn btn--gold btn--full">Finalizar compra</button>
+              <button className="btn btn--gold btn--full" onClick={() => { setOpen(false); navigate('/checkout') }}>Finalizar compra</button>
               <button className="btn btn--ghost btn--full" onClick={() => setOpen(false)}>Continuar comprando</button>
             </div>
           </>

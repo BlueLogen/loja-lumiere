@@ -1,0 +1,389 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useCart } from '../context/CartContext'
+
+const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
+
+function StepBar({ current }) {
+  return (
+    <div className="checkout-steps">
+      {STEPS.map((label, i) => (
+        <div key={label} className={`checkout-step${i <= current ? ' active' : ''}${i < current ? ' done' : ''}`}>
+          <div className="checkout-step__circle">
+            {i < current ? '✓' : i + 1}
+          </div>
+          <span>{label}</span>
+          {i < STEPS.length - 1 && <div className="checkout-step__line" />}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function OrderSummary({ items, total }) {
+  return (
+    <div className="checkout-summary">
+      <h3 className="checkout-summary__title">Resumo do pedido</h3>
+      <div className="checkout-summary__items">
+        {items.map(item => (
+          <div key={item.id} className="checkout-summary__item">
+            <div className="checkout-summary__img">
+              <img src={item.image} alt={item.name} />
+              <span className="checkout-summary__qty">{item.qty}</span>
+            </div>
+            <div className="checkout-summary__info">
+              <p>{item.name}</p>
+              {item.selectedSize && <span>Tamanho: {item.selectedSize}</span>}
+            </div>
+            <strong>R$ {(item.price * item.qty).toFixed(2).replace('.', ',')}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="checkout-summary__totals">
+        <div className="checkout-summary__row">
+          <span>Subtotal</span>
+          <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+        </div>
+        <div className="checkout-summary__row">
+          <span>Frete</span>
+          <span className={total >= 299 ? 'free-shipping' : ''}>
+            {total >= 299 ? 'Grátis 🎉' : 'R$ 19,90'}
+          </span>
+        </div>
+        <div className="checkout-summary__row checkout-summary__row--total">
+          <span>Total</span>
+          <strong>R$ {(total >= 299 ? total : total + 19.9).toFixed(2).replace('.', ',')}</strong>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── STEP 1: ENTREGA ──────────────────────────────────────
+function StepEntrega({ data, onChange, onNext }) {
+  function handleSubmit(e) {
+    e.preventDefault()
+    onNext()
+  }
+
+  return (
+    <form className="checkout-form" onSubmit={handleSubmit}>
+      <div className="checkout-form__section">
+        <h3>Dados pessoais</h3>
+        <div className="checkout-field-row">
+          <div className="checkout-field">
+            <label>Nome completo *</label>
+            <input required placeholder="Seu nome" value={data.nome} onChange={e => onChange('nome', e.target.value)} />
+          </div>
+          <div className="checkout-field">
+            <label>CPF *</label>
+            <input required placeholder="000.000.000-00" value={data.cpf} onChange={e => onChange('cpf', e.target.value)} />
+          </div>
+        </div>
+        <div className="checkout-field-row">
+          <div className="checkout-field">
+            <label>E-mail *</label>
+            <input required type="email" placeholder="seu@email.com" value={data.email} onChange={e => onChange('email', e.target.value)} />
+          </div>
+          <div className="checkout-field">
+            <label>Telefone *</label>
+            <input required placeholder="(00) 00000-0000" value={data.telefone} onChange={e => onChange('telefone', e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      <div className="checkout-form__section">
+        <h3>Endereço de entrega</h3>
+        <div className="checkout-field-row">
+          <div className="checkout-field checkout-field--sm">
+            <label>CEP *</label>
+            <input required placeholder="00000-000" value={data.cep} onChange={e => onChange('cep', e.target.value)} />
+          </div>
+          <div className="checkout-field checkout-field--lg">
+            <label>Rua / Logradouro *</label>
+            <input required placeholder="Rua das Flores" value={data.rua} onChange={e => onChange('rua', e.target.value)} />
+          </div>
+        </div>
+        <div className="checkout-field-row">
+          <div className="checkout-field checkout-field--sm">
+            <label>Número *</label>
+            <input required placeholder="123" value={data.numero} onChange={e => onChange('numero', e.target.value)} />
+          </div>
+          <div className="checkout-field">
+            <label>Complemento</label>
+            <input placeholder="Apto, bloco..." value={data.complemento} onChange={e => onChange('complemento', e.target.value)} />
+          </div>
+          <div className="checkout-field">
+            <label>Bairro *</label>
+            <input required placeholder="Seu bairro" value={data.bairro} onChange={e => onChange('bairro', e.target.value)} />
+          </div>
+        </div>
+        <div className="checkout-field-row">
+          <div className="checkout-field">
+            <label>Cidade *</label>
+            <input required placeholder="Sua cidade" value={data.cidade} onChange={e => onChange('cidade', e.target.value)} />
+          </div>
+          <div className="checkout-field checkout-field--sm">
+            <label>Estado *</label>
+            <select required value={data.estado} onChange={e => onChange('estado', e.target.value)}>
+              <option value="">UF</option>
+              {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
+                <option key={uf} value={uf}>{uf}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" className="btn btn--gold btn--full btn--lg">
+        Continuar para pagamento →
+      </button>
+    </form>
+  )
+}
+
+// ── STEP 2: PAGAMENTO ─────────────────────────────────────
+function StepPagamento({ data, onChange, onNext, onBack, total }) {
+  const finalTotal = total >= 299 ? total : total + 19.9
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    onNext()
+  }
+
+  return (
+    <form className="checkout-form" onSubmit={handleSubmit}>
+      <div className="checkout-form__section">
+        <h3>Método de pagamento</h3>
+        <div className="payment-methods">
+          {[
+            { id: 'cartao', icon: '💳', label: 'Cartão de crédito', sub: 'até 3x sem juros' },
+            { id: 'pix',    icon: '⚡', label: 'PIX',               sub: '5% de desconto' },
+            { id: 'boleto', icon: '📄', label: 'Boleto bancário',   sub: 'vence em 3 dias' },
+          ].map(m => (
+            <label key={m.id} className={`payment-option${data.metodo === m.id ? ' active' : ''}`}>
+              <input
+                type="radio"
+                name="metodo"
+                value={m.id}
+                checked={data.metodo === m.id}
+                onChange={() => onChange('metodo', m.id)}
+              />
+              <span className="payment-option__icon">{m.icon}</span>
+              <span className="payment-option__text">
+                <strong>{m.label}</strong>
+                <small>{m.sub}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {data.metodo === 'cartao' && (
+        <div className="checkout-form__section">
+          <h3>Dados do cartão</h3>
+          <div className="checkout-field">
+            <label>Número do cartão *</label>
+            <input required placeholder="0000 0000 0000 0000" maxLength={19} value={data.cardNum || ''} onChange={e => onChange('cardNum', e.target.value)} />
+          </div>
+          <div className="checkout-field">
+            <label>Nome no cartão *</label>
+            <input required placeholder="Como está no cartão" value={data.cardName || ''} onChange={e => onChange('cardName', e.target.value)} />
+          </div>
+          <div className="checkout-field-row">
+            <div className="checkout-field">
+              <label>Validade *</label>
+              <input required placeholder="MM/AA" maxLength={5} value={data.cardExp || ''} onChange={e => onChange('cardExp', e.target.value)} />
+            </div>
+            <div className="checkout-field checkout-field--sm">
+              <label>CVV *</label>
+              <input required placeholder="000" maxLength={4} value={data.cardCvv || ''} onChange={e => onChange('cardCvv', e.target.value)} />
+            </div>
+            <div className="checkout-field">
+              <label>Parcelas</label>
+              <select value={data.parcelas || '1'} onChange={e => onChange('parcelas', e.target.value)}>
+                <option value="1">1x de R$ {finalTotal.toFixed(2).replace('.', ',')} (à vista)</option>
+                <option value="2">2x de R$ {(finalTotal / 2).toFixed(2).replace('.', ',')} sem juros</option>
+                <option value="3">3x de R$ {(finalTotal / 3).toFixed(2).replace('.', ',')} sem juros</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {data.metodo === 'pix' && (
+        <div className="checkout-form__section pix-info">
+          <div className="pix-box">
+            <div className="pix-qr">
+              <div className="pix-qr__mock">
+                <svg viewBox="0 0 100 100" width="120" height="120">
+                  <rect width="100" height="100" fill="white"/>
+                  {[0,20,40,60,80].map(x => [0,20,40,60,80].map(y => (
+                    <rect key={`${x}-${y}`} x={x+2} y={y+2} width={Math.random() > 0.5 ? 14 : 8} height={Math.random() > 0.5 ? 14 : 8} fill="#0d2347" rx="1"/>
+                  )))}
+                </svg>
+              </div>
+              <p className="pix-qr__label">QR Code PIX</p>
+            </div>
+            <div className="pix-details">
+              <p><strong>Valor com desconto PIX (5%):</strong></p>
+              <p className="pix-total">R$ {(finalTotal * 0.95).toFixed(2).replace('.', ',')}</p>
+              <p className="pix-key">Chave PIX: <strong>basicebijus@pix.com</strong></p>
+              <p className="pix-note">O pedido é confirmado automaticamente após o pagamento.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {data.metodo === 'boleto' && (
+        <div className="checkout-form__section">
+          <div className="boleto-info">
+            <span>📄</span>
+            <p>O boleto será gerado após confirmar o pedido. Vencimento em <strong>3 dias úteis</strong>. Pagamentos após o vencimento não serão processados.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="checkout-nav">
+        <button type="button" className="btn btn--ghost" onClick={onBack}>← Voltar</button>
+        <button type="submit" className="btn btn--gold btn--lg" disabled={!data.metodo}>
+          Confirmar pedido →
+        </button>
+      </div>
+    </form>
+  )
+}
+
+// ── STEP 3: CONFIRMAÇÃO ───────────────────────────────────
+function StepConfirmacao({ entrega, pagamento, items, total }) {
+  const finalTotal = total >= 299 ? total : total + 19.9
+  const orderNum = String(Math.floor(Math.random() * 900000) + 100000)
+
+  const metodoLabel = { cartao: 'Cartão de crédito', pix: 'PIX', boleto: 'Boleto bancário' }
+
+  return (
+    <div className="checkout-success">
+      <div className="checkout-success__icon">✓</div>
+      <h2>Pedido realizado!</h2>
+      <p>Seu pedido <strong>#{orderNum}</strong> foi confirmado com sucesso.</p>
+      <p>Uma confirmação foi enviada para <strong>{entrega.email}</strong></p>
+
+      <div className="checkout-success__card">
+        <div className="checkout-success__row">
+          <span>Entrega para</span>
+          <strong>{entrega.nome}</strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Endereço</span>
+          <strong>{entrega.rua}, {entrega.numero} — {entrega.bairro}, {entrega.cidade}/{entrega.estado}</strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Pagamento</span>
+          <strong>{metodoLabel[pagamento.metodo] || pagamento.metodo}
+            {pagamento.metodo === 'cartao' && pagamento.parcelas > 1 ? ` · ${pagamento.parcelas}x` : ''}
+            {pagamento.metodo === 'pix' ? ' · 5% OFF' : ''}
+          </strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Total</span>
+          <strong className="checkout-success__total">
+            R$ {(pagamento.metodo === 'pix' ? finalTotal * 0.95 : finalTotal).toFixed(2).replace('.', ',')}
+          </strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Previsão de entrega</span>
+          <strong>3 a 7 dias úteis</strong>
+        </div>
+      </div>
+
+      <div className="checkout-success__items">
+        {items.map(item => (
+          <div key={item.id} className="checkout-success__item">
+            <img src={item.image} alt={item.name} />
+            <span>{item.qty}x {item.name}</span>
+          </div>
+        ))}
+      </div>
+
+      <Link to="/" className="btn btn--gold btn--full btn--lg">Continuar comprando</Link>
+    </div>
+  )
+}
+
+// ── MAIN ─────────────────────────────────────────────────
+export default function Checkout() {
+  const { items, total, setOpen, clearCart } = useCart()
+  const navigate = useNavigate()
+  const [step, setStep] = useState(0)
+
+  const [entrega, setEntrega] = useState({
+    nome: '', cpf: '', email: '', telefone: '',
+    cep: '', rua: '', numero: '', complemento: '',
+    bairro: '', cidade: '', estado: '',
+  })
+
+  const [pagamento, setPagamento] = useState({
+    metodo: '', cardNum: '', cardName: '', cardExp: '', cardCvv: '', parcelas: '1',
+  })
+
+  if (items.length === 0 && step < 2) {
+    return (
+      <main className="checkout-page">
+        <div className="checkout-empty">
+          <span>🛒</span>
+          <h2>Seu carrinho está vazio</h2>
+          <Link to="/produtos" className="btn btn--gold">Ver produtos</Link>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="checkout-page">
+      <div className="checkout-header">
+        <Link to="/" className="checkout-header__logo">
+          <img src="/logo.png" alt="Basic & Bijus" />
+        </Link>
+        <h1>Checkout</h1>
+        <button className="checkout-header__close" onClick={() => navigate(-1)}>✕</button>
+      </div>
+
+      <div className="checkout-body">
+        <div className="checkout-main">
+          <StepBar current={step} />
+
+          {step === 0 && (
+            <StepEntrega
+              data={entrega}
+              onChange={(field, val) => setEntrega(p => ({ ...p, [field]: val }))}
+              onNext={() => setStep(1)}
+            />
+          )}
+          {step === 1 && (
+            <StepPagamento
+              data={pagamento}
+              onChange={(field, val) => setPagamento(p => ({ ...p, [field]: val }))}
+              onNext={() => { setStep(2); setOpen(false); clearCart() }}
+              onBack={() => setStep(0)}
+              total={total}
+            />
+          )}
+          {step === 2 && (
+            <StepConfirmacao
+              entrega={entrega}
+              pagamento={pagamento}
+              items={items}
+              total={total}
+            />
+          )}
+        </div>
+
+        {step < 2 && (
+          <div className="checkout-aside">
+            <OrderSummary items={items} total={total} />
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
