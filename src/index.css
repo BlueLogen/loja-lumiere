@@ -563,14 +563,56 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 12px 4px;
+  gap: 6px;
+  padding: 14px 4px;
   text-align: center;
   border-right: 1px solid var(--border);
 }
 .perks-strip__item:last-child { border-right: none; }
-.perks-strip__item span { font-size: 18px; }
-.perks-strip__item p { font-size: 9px; color: var(--gray); line-height: 1.3; }
+.perks-strip__item p {
+  font-size: 9px;
+  color: var(--gray);
+  line-height: 1.3;
+  font-weight: 500;
+}
+.perks-strip__bubble {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform .2s;
+}
+.perks-strip__item:hover .perks-strip__bubble { transform: scale(1.12); }
+
+/* Perk animations */
+@keyframes perkTruck {
+  0%,100%  { transform: translateX(0)  rotate(0deg);   }
+  20%      { transform: translateX(5px) rotate(-3deg);  }
+  40%      { transform: translateX(-4px) rotate(3deg);  }
+  60%      { transform: translateX(3px) rotate(-2deg);  }
+  80%      { transform: translateX(-2px) rotate(1deg);  }
+}
+@keyframes perkShield {
+  0%,100%  { transform: scale(1);    filter: drop-shadow(0 0 0px transparent); }
+  50%      { transform: scale(1.22); filter: drop-shadow(0 0 7px #f87171aa);   }
+}
+@keyframes perkSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes perkDiamond {
+  0%,100%  { transform: scale(1)    rotate(0deg);  filter: drop-shadow(0 0 0 transparent); }
+  25%      { transform: scale(1.2)  rotate(-12deg); }
+  50%      { transform: scale(1.25) rotate(0deg);  filter: drop-shadow(0 0 8px #a78bfaaa); }
+  75%      { transform: scale(1.2)  rotate(12deg); }
+}
+
+.perk--truck   { display:inline-block; animation: perkTruck   2.4s ease-in-out infinite; }
+.perk--shield  { display:inline-block; animation: perkShield  2s   ease-in-out infinite; }
+.perk--spin    { display:inline-block; animation: perkSpin    2.2s linear     infinite;  }
+.perk--diamond { display:inline-block; animation: perkDiamond 2.6s ease-in-out infinite; }
 
 /* ─── FILTER BAR ─── */
 .filter-bar {

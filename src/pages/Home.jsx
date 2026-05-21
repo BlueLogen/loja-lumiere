@@ -166,13 +166,15 @@ export default function Home() {
       {/* Garantias strip */}
       <div className="perks-strip">
         {[
-          { icon: '🚚', text: 'Frete grátis +R$299' },
-          { icon: '🛡️', text: 'Garantia 1 ano' },
-          { icon: '↩️', text: 'Devolução 30 dias' },
-          { icon: '💎', text: 'Certificado' },
+          { icon: '🚚', text: 'Frete grátis +R$299', bg: '#fef9c3', cls: 'perk--truck'   },
+          { icon: '🛡️', text: 'Garantia 1 ano',      bg: '#fee2e2', cls: 'perk--shield'  },
+          { icon: '🔄', text: 'Devolução 30 dias',   bg: '#dbeafe', cls: 'perk--spin'    },
+          { icon: '💎', text: 'Certificado',          bg: '#f5f3ff', cls: 'perk--diamond' },
         ].map(p => (
           <div key={p.text} className="perks-strip__item">
-            <span>{p.icon}</span>
+            <div className="perks-strip__bubble" style={{ background: p.bg }}>
+              <span className={p.cls}>{p.icon}</span>
+            </div>
             <p>{p.text}</p>
           </div>
         ))}
