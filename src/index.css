@@ -212,20 +212,28 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   gap: 6px;
 }
 .cat-icon__circle {
-  width: 52px; height: 52px;
+  width: 54px; height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e8f0fb 0%, #c8d9f5 100%);
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px;
-  border: 1.5px solid #a8c4e8;
-  transition: transform 0.2s;
+  border: 1.5px solid transparent;
+  transition: transform .22s, box-shadow .22s;
+  flex-shrink: 0;
 }
-.cat-icon:hover .cat-icon__circle { transform: scale(1.08); }
+.cat-icon__circle svg {
+  width: 27px; height: 27px;
+  display: block;
+}
+.cat-icon:hover .cat-icon__circle {
+  transform: scale(1.12);
+  box-shadow: 0 6px 20px rgba(0,0,0,.13);
+}
+.cat-icon:active .cat-icon__circle { transform: scale(.96); }
 .cat-icon span {
   font-size: 10px;
   color: var(--gray);
   text-align: center;
   letter-spacing: 0.3px;
+  font-weight: 500;
 }
 
 /* ─── FLASH SALE ─── */
