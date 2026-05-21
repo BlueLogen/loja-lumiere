@@ -4,72 +4,88 @@ import ProductCard from '../components/ProductCard'
 import Banner from '../components/Banner'
 import FlashSale from '../components/FlashSale'
 
-// ── SVG icons ─────────────────────────────────────────────
-const S = { fill:'none', strokeLinecap:'round', strokeLinejoin:'round', strokeWidth:'1.85' }
-
+// ── Emoji-style illustrated icons ─────────────────────────
 const IconShirt = () => (
-  <svg viewBox="0 0 24 24" {...S} stroke="currentColor">
-    <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/>
+  <svg viewBox="0 0 32 32">
+    <path d="M16 3c-1.8 0-3.3 1-4.2 2.4L5.5 3 1 8l4 3.2 1.5-1.2V29h19V10l1.5 1.2L30 8l-4.5-5-6.3 2.4C18.3 4 16.8 3 16 3z" fill="#fb7185"/>
+    <path d="M16 3c-1.8 0-3.3 1-4.2 2.4a4.8 4.8 0 008.4 0C19.3 4 17.8 3 16 3z" fill="#e11d48"/>
+    <rect x="7" y="15" width="18" height="1.5" rx=".75" fill="#fda4af" opacity=".6"/>
+    <rect x="7" y="19" width="14" height="1.5" rx=".75" fill="#fda4af" opacity=".6"/>
+    <rect x="7" y="23" width="10" height="1.5" rx=".75" fill="#fda4af" opacity=".6"/>
   </svg>
 )
 
 const IconNecklace = () => (
-  <svg viewBox="0 0 24 24" {...S} stroke="currentColor">
-    <path d="M7 4Q4.5 11 10.5 15"/>
-    <path d="M17 4Q19.5 11 13.5 15"/>
-    <path d="M10.5 15 L12 13 L13.5 15 L12 21 Z"/>
-    <circle cx="12" cy="3.5" r="1.3" fill="currentColor" stroke="none"/>
+  <svg viewBox="0 0 32 32">
+    <path d="M7 5Q4 13 12 18" stroke="#f59e0b" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
+    <path d="M25 5Q28 13 20 18" stroke="#f59e0b" strokeWidth="2.2" fill="none" strokeLinecap="round"/>
+    <path d="M12 18L16 13.5l4 4.5-4 8z" fill="#fbbf24"/>
+    <path d="M12 18L16 13.5l4 4.5" fill="#f59e0b"/>
+    <circle cx="14" cy="16.5" r="1.2" fill="white" opacity=".8"/>
+    <circle cx="16" cy="4" r="2" fill="#d97706"/>
+    <circle cx="16" cy="4" r="1" fill="#fef3c7"/>
   </svg>
 )
 
 const IconEarring = () => (
-  <svg viewBox="0 0 24 24" {...S} stroke="currentColor">
-    <circle cx="9" cy="5" r="1.5"/>
-    <line x1="9" y1="6.5" x2="9" y2="10"/>
-    <path d="M6 10 h6 l-1.2 6.5 a2 2 0 0 1-3.6 0 Z"/>
-    <circle cx="16" cy="5" r="1.5"/>
-    <line x1="16" y1="6.5" x2="16" y2="10"/>
-    <path d="M13 10 h6 l-1.2 6.5 a2 2 0 0 1-3.6 0 Z"/>
+  <svg viewBox="0 0 32 32">
+    <circle cx="10" cy="6" r="2.5" fill="#34d399"/>
+    <circle cx="10" cy="6" r="1.2" fill="#ecfdf5"/>
+    <line x1="10" y1="8.5" x2="10" y2="13" stroke="#10b981" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M7 13h6l-2 9a1.8 1.8 0 01-2 0z" fill="#6ee7b7"/>
+    <ellipse cx="10" cy="19" rx="2" ry="1.5" fill="#34d399" opacity=".6"/>
+    <circle cx="22" cy="6" r="2.5" fill="#34d399"/>
+    <circle cx="22" cy="6" r="1.2" fill="#ecfdf5"/>
+    <line x1="22" y1="8.5" x2="22" y2="13" stroke="#10b981" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M19 13h6l-2 9a1.8 1.8 0 01-2 0z" fill="#6ee7b7"/>
+    <ellipse cx="22" cy="19" rx="2" ry="1.5" fill="#34d399" opacity=".6"/>
   </svg>
 )
 
 const IconRing = () => (
-  <svg viewBox="0 0 24 24" {...S} stroke="currentColor">
-    <path d="M6 17 a6 4 0 0 1 12 0 a6 4 0 0 1-12 0"/>
-    <path d="M9.5 17 L10.5 11 L12 8 L13.5 11 L14.5 17"/>
-    <path d="M10.5 11 L12 9 L13.5 11"/>
+  <svg viewBox="0 0 32 32">
+    <ellipse cx="16" cy="22" rx="8" ry="5" fill="none" stroke="#a78bfa" strokeWidth="3"/>
+    <path d="M12 22l1.5-9 2.5-4 2.5 4 1.5 9" fill="none" stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M13 13.5L16 10l3 3.5" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M13 13.5L16 10l3 3.5L16 17z" fill="#c4b5fd"/>
+    <circle cx="16" cy="11" r="2" fill="#7c3aed"/>
+    <circle cx="15.2" cy="10.3" r=".7" fill="white" opacity=".8"/>
   </svg>
 )
 
 const IconBracelet = () => (
-  <svg viewBox="0 0 24 24" {...S} stroke="currentColor">
-    <circle cx="12" cy="12" r="7"/>
-    <circle cx="12" cy="5"  r="1.4" fill="currentColor" stroke="none"/>
-    <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>
-    <circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/>
-    <circle cx="5"  cy="12" r="1.4" fill="currentColor" stroke="none"/>
-    <circle cx="16.9" cy="7.1"  r="1.1" fill="currentColor" stroke="none"/>
-    <circle cx="16.9" cy="16.9" r="1.1" fill="currentColor" stroke="none"/>
-    <circle cx="7.1"  cy="16.9" r="1.1" fill="currentColor" stroke="none"/>
-    <circle cx="7.1"  cy="7.1"  r="1.1" fill="currentColor" stroke="none"/>
+  <svg viewBox="0 0 32 32">
+    <circle cx="16" cy="16" r="9" fill="none" stroke="#60a5fa" strokeWidth="3.5"/>
+    <circle cx="16" cy="7"  r="2.8" fill="#3b82f6"/>
+    <circle cx="25" cy="16" r="2.8" fill="#3b82f6"/>
+    <circle cx="16" cy="25" r="2.8" fill="#3b82f6"/>
+    <circle cx="7"  cy="16" r="2.8" fill="#3b82f6"/>
+    <circle cx="22.4" cy="9.6"  r="2" fill="#93c5fd"/>
+    <circle cx="22.4" cy="22.4" r="2" fill="#93c5fd"/>
+    <circle cx="9.6"  cy="22.4" r="2" fill="#93c5fd"/>
+    <circle cx="9.6"  cy="9.6"  r="2" fill="#93c5fd"/>
+    <circle cx="16" cy="7" r="1.2" fill="white" opacity=".7"/>
   </svg>
 )
 
 const IconShopBag = () => (
-  <svg viewBox="0 0 24 24" {...S} stroke="currentColor">
-    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <path d="M16 10a4 4 0 0 1-8 0"/>
+  <svg viewBox="0 0 32 32">
+    <rect x="4" y="11" width="24" height="18" rx="3.5" fill="#818cf8"/>
+    <path d="M4 11l2.5-7h19l2.5 7z" fill="#6366f1"/>
+    <path d="M12 15a4 4 0 008 0" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <rect x="13" y="20" width="6" height="5" rx="1.5" fill="white" opacity=".75"/>
+    <circle cx="24" cy="8" r="2" fill="#fbbf24"/>
+    <circle cx="8"  cy="8" r="2" fill="#fbbf24"/>
   </svg>
 )
 
 const catIcons = [
-  { id:'camisetas', label:'Camisetas', Icon:IconShirt,    bg:'#fce7f3', border:'#f9a8d4', color:'#be185d' },
-  { id:'colares',   label:'Colares',   Icon:IconNecklace, bg:'#fef9c3', border:'#fde047', color:'#a16207' },
-  { id:'brincos',   label:'Brincos',   Icon:IconEarring,  bg:'#d1fae5', border:'#6ee7b7', color:'#065f46' },
-  { id:'aneis',     label:'Anéis',     Icon:IconRing,     bg:'#ede9fe', border:'#c4b5fd', color:'#5b21b6' },
-  { id:'pulseiras', label:'Pulseiras', Icon:IconBracelet, bg:'#dbeafe', border:'#93c5fd', color:'#1d4ed8' },
-  { id:'todos',     label:'Ver tudo',  Icon:IconShopBag,  bg:'#e0e7ff', border:'#a5b4fc', color:'#1a3a6e' },
+  { id:'camisetas', label:'Camisetas', Icon:IconShirt,    bg:'#fff1f2', border:'#fecdd3' },
+  { id:'colares',   label:'Colares',   Icon:IconNecklace, bg:'#fffbeb', border:'#fde68a' },
+  { id:'brincos',   label:'Brincos',   Icon:IconEarring,  bg:'#ecfdf5', border:'#a7f3d0' },
+  { id:'aneis',     label:'Anéis',     Icon:IconRing,     bg:'#f5f3ff', border:'#ddd6fe' },
+  { id:'pulseiras', label:'Pulseiras', Icon:IconBracelet, bg:'#eff6ff', border:'#bfdbfe' },
+  { id:'todos',     label:'Ver tudo',  Icon:IconShopBag,  bg:'#eef2ff', border:'#c7d2fe' },
 ]
 
 export default function Home() {
@@ -86,7 +102,7 @@ export default function Home() {
       <section className="cat-icons">
         {catIcons.map(c => (
           <Link key={c.id} to={c.id === 'todos' ? '/produtos' : `/produtos?cat=${c.id}`} className="cat-icon">
-            <div className="cat-icon__circle" style={{ background: c.bg, borderColor: c.border, color: c.color }}>
+            <div className="cat-icon__circle" style={{ background: c.bg, borderColor: c.border }}>
               <c.Icon />
             </div>
             <span>{c.label}</span>
