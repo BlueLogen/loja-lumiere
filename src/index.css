@@ -2,17 +2,17 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --navy: #1a3a6e;
-  --navy-dark: #0d2347;
-  --navy-light: #2a5298;
-  --navy-pale: #e8f0fb;
+  --navy: #111111;
+  --navy-dark: #000000;
+  --navy-light: #2a2a2a;
+  --navy-pale: #f0f0f0;
   --gold: #c9a84c;
   --gold-light: #f0d98b;
   --black: #0e0e0e;
-  --dark: #0d1b3e;
+  --dark: #111111;
   --gray: #757575;
   --gray-light: #f5f5f5;
-  --border: #e0e8f5;
+  --border: #e0e0e0;
   --white: #ffffff;
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Jost', system-ui, sans-serif;
@@ -435,7 +435,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .product-card__free-ship {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  background: linear-gradient(90deg, #16a34a, #22c55e);
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
   color: white;
   font-size: 9.5px;
   font-weight: 600;
@@ -498,8 +498,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .product-card__save {
   font-size: 9px;
   font-weight: 700;
-  color: #16a34a;
-  background: #dcfce7;
+  color: #1d4ed8;
+  background: #dbeafe;
   padding: 1px 5px;
   border-radius: 4px;
 }
@@ -536,7 +536,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .product-card__installment em {
   font-style: normal;
-  color: #16a34a;
+  color: #2563eb;
   font-weight: 600;
 }
 
@@ -556,9 +556,9 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .product-card__ship-badge {
   font-size: 9px;
-  color: #16a34a;
+  color: #1d4ed8;
   font-weight: 600;
-  background: #dcfce7;
+  background: #dbeafe;
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -1053,7 +1053,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .btn--gold { background: var(--navy); color: var(--white); }
 .btn--gold:hover { background: var(--navy-dark); }
-.btn--gold.btn--added { background: #2d6a4f; color: var(--white); }
+.btn--gold.btn--added { background: #2563eb; color: var(--white); }
 .btn--full { width: 100%; }
 .btn--outline {
   border: 1px solid var(--black); color: var(--black);
@@ -1605,7 +1605,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 /* Toast */
 .admin-toast {
-  background: #2d6a4f;
+  background: #2563eb;
   color: var(--white);
   text-align: center;
   padding: 10px;
@@ -1826,8 +1826,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--white);
 }
 .checkout-step.done .checkout-step__circle {
-  border-color: #2d6a4f;
-  background: #2d6a4f;
+  border-color: #2563eb;
+  background: #2563eb;
   color: var(--white);
 }
 .checkout-step span {
@@ -1837,7 +1837,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   letter-spacing: .03em;
 }
 .checkout-step.active span { color: var(--navy); font-weight: 700; }
-.checkout-step.done span   { color: #2d6a4f; }
+.checkout-step.done span   { color: #2563eb; }
 .checkout-step__line {
   position: absolute;
   top: 15px;
@@ -1847,7 +1847,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   background: var(--border);
   z-index: 0;
 }
-.checkout-step.done .checkout-step__line { background: #2d6a4f; }
+.checkout-step.done .checkout-step__line { background: #2563eb; }
 
 /* Order summary */
 .checkout-summary {
@@ -1901,7 +1901,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .checkout-summary__row { display: flex; justify-content: space-between; font-size: .82rem; color: var(--gray); }
 .checkout-summary__row--total { color: var(--navy-dark); font-size: .92rem; }
 .checkout-summary__row--total strong { font-size: 1rem; color: var(--navy-dark); }
-.free-shipping { color: #2d6a4f; font-weight: 600; }
+.free-shipping { color: #2563eb; font-weight: 600; }
 
 /* Form */
 .checkout-form { display: flex; flex-direction: column; gap: 14px; }
@@ -2026,7 +2026,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #2d6a4f;
+  background: #2563eb;
   color: var(--white);
   font-size: 1.8rem;
   display: flex;
@@ -2142,8 +2142,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   margin-top: 12px;
 }
 .frete-badge--free {
-  background: #f0faf5;
-  border-color: #2d6a4f;
+  background: #eff6ff;
+  border-color: #2563eb;
 }
 .frete-badge__icon { font-size: 1.4rem; }
 .frete-badge strong { display: block; font-size: .85rem; color: var(--navy-dark); }
@@ -2379,7 +2379,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .drawer-img-row button { color: var(--gray); font-size: .9rem; padding: 4px; flex-shrink: 0; }
 .drawer-add-img { font-size: .8rem; color: var(--navy-light); padding: 7px; border: 1.5px dashed var(--navy-light); border-radius: 7px; width: 100%; transition: background .18s; }
 .drawer-add-img:hover { background: var(--navy-pale); }
-.drawer-discount-preview { background: #dcfce7; color: #15803d; font-size: .8rem; padding: 7px 12px; border-radius: 8px; }
+.drawer-discount-preview { background: #dbeafe; color: #2563eb; font-size: .8rem; padding: 7px 12px; border-radius: 8px; }
 .drawer-badge-presets { display: flex; flex-wrap: wrap; gap: 7px; }
 .drawer-badge-btn { padding: 5px 12px; border-radius: 7px; font-size: .78rem; font-weight: 600; border: 1.5px solid; cursor: pointer; transition: all .18s; font-family: var(--font-sans); }
 .drawer-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
