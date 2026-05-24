@@ -62,14 +62,6 @@ export function ProductsProvider({ children }) {
 
   async function fetchProducts() {
     setLoading(true)
-
-    // Sem Supabase configurado → usa dados locais
-    if (!supabase) {
-      setProducts(seedProducts)
-      setLoading(false)
-      return
-    }
-
     try {
       const { data, error } = await supabase
         .from('products')
@@ -88,12 +80,10 @@ export function ProductsProvider({ children }) {
       console.error('[Supabase] Falha de conexão:', err.message)
       setProducts(seedProducts)
     }
-
     setLoading(false)
   }
 
   async function seedDatabase() {
-    if (!supabase) { setProducts(seedProducts); return }
     const rows = seedProducts.map(toDB)
     const { data, error } = await supabase
       .from('products')
@@ -109,7 +99,6 @@ export function ProductsProvider({ children }) {
   }
 
   async function addProduct(product) {
-    if (!supabase) throw new Error('Supabase não configurado')
     const { data, error } = await supabase
       .from('products')
       .insert(toDB(product))
@@ -122,7 +111,6 @@ export function ProductsProvider({ children }) {
   }
 
   async function updateProduct(id, product) {
-    if (!supabase) throw new Error('Supabase não configurado')
     const { data, error } = await supabase
       .from('products')
       .update(toDB(product))
@@ -135,7 +123,6 @@ export function ProductsProvider({ children }) {
   }
 
   async function deleteProduct(id) {
-    if (!supabase) throw new Error('Supabase não configurado')
     const { error } = await supabase
       .from('products')
       .delete()
