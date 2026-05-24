@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { supabase } from '../lib/supabase'
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
 
@@ -448,9 +449,8 @@ function StepPagamento({ data, onChange, onNext, onBack, subtotal, frete }) {
 }
 
 // ── STEP 3: CONFIRMAÇÃO ───────────────────────────────────
-function StepConfirmacao({ entrega, pagamento, items, subtotal, frete }) {
-  const finalTotal = subtotal + (frete ?? 0)
-  const orderNum   = useRef(String(Math.floor(Math.random() * 900000) + 100000)).current
+function StepConfirmacao({ entrega, pagamento, items, subtotal, frete, orderNum }) {
+  const finalTotal  = subtotal + (frete ?? 0)
   const metodoLabel = { cartao: 'Cartão de crédito', pix: 'PIX', boleto: 'Boleto bancário' }
 
   return (
@@ -512,8 +512,10 @@ function StepConfirmacao({ entrega, pagamento, items, subtotal, frete }) {
 // ── MAIN ─────────────────────────────────────────────────
 export default function Checkout() {
   const { items, total, setOpen, clearCart } = useCart()
-  const navigate = useNavigate()
-  const [step, setStep] = useState(0)
+  const navigate  = useNavigate()
+  const [step, setStep]       = useState(0)
+  const [orderNum, setOrderNum] = useState('')
+  const [saving, setSaving]   = useState(false)
 
   const [entrega, setEntrega] = useState({
     nome: '', cpf: '', email: '', telefone: '',
@@ -531,6 +533,42 @@ export default function Checkout() {
   }
   function handleEntregaBulk(fields) {
     setEntrega(p => ({ ...p, ...fields }))
+  }
+
+  async function confirmOrder() {
+    const finalTotal = total + (frete ?? 0)
+    const num = String(Math.floor(Math.random() * 900000) + 100000)
+    setOrderNum(num)
+    setSaving(true)
+    try {
+      await supabase.from('orders').insert({
+        order_number:          num,
+        customer_name:         entrega.nome,
+        customer_email:        entrega.email,
+        customer_phone:        entrega.telefone,
+        customer_cpf:          entrega.cpf,
+        address_cep:           entrega.cep,
+        address_street:        entrega.rua,
+        address_number:        entrega.numero,
+        address_complement:    entrega.complemento || null,
+        address_neighborhood:  entrega.bairro,
+        address_city:          entrega.cidade,
+        address_state:         entrega.estado,
+        payment_method:        pagamento.metodo,
+        payment_installments:  Number(pagamento.parcelas) || 1,
+        subtotal:              total,
+        shipping:              frete ?? 0,
+        total:                 pagamento.metodo === 'pix' ? finalTotal * 0.95 : finalTotal,
+        items:                 items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+      })
+    } catch (e) {
+      console.error('[Supabase] Erro ao salvar pedido:', e)
+    } finally {
+      setSaving(false)
+      setOpen(false)
+      clearCart()
+      setStep(2)
+    }
   }
 
   if (items.length === 0 && step < 2) {
@@ -572,7 +610,7 @@ export default function Checkout() {
             <StepPagamento
               data={pagamento}
               onChange={(field, val) => setPagamento(p => ({ ...p, [field]: val }))}
-              onNext={() => { setStep(2); setOpen(false); clearCart() }}
+              onNext={confirmOrder}
               onBack={() => setStep(0)}
               subtotal={total}
               frete={frete ?? 0}
@@ -585,6 +623,7 @@ export default function Checkout() {
               items={items}
               subtotal={total}
               frete={frete ?? 0}
+              orderNum={orderNum}
             />
           )}
         </div>

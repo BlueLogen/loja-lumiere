@@ -1,80 +1,137 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { products as defaultProducts } from '../data/products'
+import { supabase } from '../lib/supabase'
+import { products as seedProducts } from '../data/products'
 
 const ProductsContext = createContext()
 
-const STORAGE_KEY = 'lumiere_products'
-const NEXT_ID_KEY = 'lumiere_next_id'
+const CATEGORIES = [
+  { id: 'todos',     label: 'Todos' },
+  { id: 'camisetas', label: 'Camisetas' },
+  { id: 'colares',   label: 'Colares' },
+  { id: 'brincos',   label: 'Brincos' },
+  { id: 'aneis',     label: 'Anéis' },
+  { id: 'pulseiras', label: 'Pulseiras' },
+]
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
+// ── Mapeamento DB (snake_case) ↔ App (camelCase) ──────────
+function fromDB(p) {
+  return {
+    id:            p.id,
+    name:          p.name,
+    category:      p.category,
+    price:         Number(p.price),
+    originalPrice: p.original_price ? Number(p.original_price) : null,
+    image:         p.image,
+    images:        p.images || [p.image],
+    description:   p.description,
+    badge:         p.badge,
+    badgeColor:    p.badge_color || '#c9a84c',
+    featured:      p.featured,
+    material:      p.material,
+    stone:         p.stone,
+    sizes:         p.sizes,
+    sold:          p.sold,
+  }
 }
 
-function save(products) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(products))
+function toDB(p) {
+  return {
+    name:           p.name,
+    category:       p.category,
+    price:          Number(p.price),
+    original_price: p.originalPrice ? Number(p.originalPrice) : null,
+    image:          p.image,
+    images:         p.images?.filter(Boolean) || [p.image],
+    description:    p.description || '',
+    badge:          p.badge || null,
+    badge_color:    p.badgeColor || '#c9a84c',
+    featured:       p.featured || false,
+    material:       p.material || null,
+    stone:          p.stone || null,
+    sizes:          p.sizes?.length ? p.sizes : null,
+    sold:           p.sold ? Number(p.sold) : null,
+  }
 }
 
-function getNextId() {
-  const stored = localStorage.getItem(NEXT_ID_KEY)
-  return stored ? Number(stored) : defaultProducts.length + 1
-}
-
-function bumpNextId(id) {
-  localStorage.setItem(NEXT_ID_KEY, String(id + 1))
-}
-
+// ── Provider ──────────────────────────────────────────────
 export function ProductsProvider({ children }) {
-  const [products, setProducts] = useState(() => {
-    const stored = load()
-    if (stored) return stored
-    // seed localStorage with defaults on first load
-    save(defaultProducts)
-    return defaultProducts
-  })
+  const [products, setProducts] = useState([])
+  const [loading, setLoading]   = useState(true)
 
-  function persist(next) {
-    setProducts(next)
-    save(next)
-  }
+  useEffect(() => { fetchProducts() }, [])
 
-  function addProduct(data) {
-    const id = getNextId()
-    bumpNextId(id)
-    const product = {
-      ...data,
-      id,
-      images: data.images?.length ? data.images : [data.image],
+  async function fetchProducts() {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('id', { ascending: true })
+
+    if (error) {
+      console.error('[Supabase] Erro ao buscar produtos:', error.message)
+      setProducts(seedProducts) // fallback local
+    } else if (data.length === 0) {
+      // Tabela vazia → semeia com os produtos padrão
+      await seedDatabase()
+    } else {
+      setProducts(data.map(fromDB))
     }
-    persist([...products, product])
-    return product
+    setLoading(false)
   }
 
-  function updateProduct(id, data) {
-    persist(products.map(p =>
-      p.id === id
-        ? { ...p, ...data, id, images: data.images?.length ? data.images : [data.image] }
-        : p
-    ))
+  async function seedDatabase() {
+    const rows = seedProducts.map(toDB)
+    const { data, error } = await supabase
+      .from('products')
+      .insert(rows)
+      .select()
+
+    if (error) {
+      console.error('[Supabase] Erro ao semear produtos:', error.message)
+      setProducts(seedProducts)
+    } else {
+      setProducts(data.map(fromDB))
+    }
   }
 
-  function deleteProduct(id) {
-    persist(products.filter(p => p.id !== id))
+  async function addProduct(product) {
+    const { data, error } = await supabase
+      .from('products')
+      .insert(toDB(product))
+      .select()
+      .single()
+
+    if (error) { console.error('[Supabase] addProduct:', error.message); return null }
+    setProducts(prev => [...prev, fromDB(data)])
+    return fromDB(data)
   }
 
-  const categories = [
-    { id: 'todos', label: 'Todos' },
-    { id: 'camisetas', label: 'Camisetas' },
-    { id: 'colares', label: 'Colares' },
-    { id: 'brincos', label: 'Brincos' },
-    { id: 'aneis', label: 'Anéis' },
-    { id: 'pulseiras', label: 'Pulseiras' },
-  ]
+  async function updateProduct(id, product) {
+    const { data, error } = await supabase
+      .from('products')
+      .update(toDB(product))
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) { console.error('[Supabase] updateProduct:', error.message); return }
+    setProducts(prev => prev.map(p => p.id === id ? fromDB(data) : p))
+  }
+
+  async function deleteProduct(id) {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id)
+
+    if (error) { console.error('[Supabase] deleteProduct:', error.message); return }
+    setProducts(prev => prev.filter(p => p.id !== id))
+  }
 
   return (
-    <ProductsContext.Provider value={{ products, addProduct, updateProduct, deleteProduct, categories }}>
+    <ProductsContext.Provider
+      value={{ products, loading, addProduct, updateProduct, deleteProduct, categories: CATEGORIES }}
+    >
       {children}
     </ProductsContext.Provider>
   )
