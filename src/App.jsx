@@ -12,6 +12,7 @@ import About from './pages/About'
 import Admin from './pages/Admin'
 import AdminLogin from './pages/AdminLogin'
 import Checkout from './pages/Checkout'
+import Dash from './pages/Dash'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -39,6 +40,7 @@ export default function App() {
           {/* Admin routes — sem header/footer da loja */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/dash" element={<Dash />} />
 
           {/* Store routes */}
           <Route path="/" element={<StoreLayout><Home /></StoreLayout>} />
