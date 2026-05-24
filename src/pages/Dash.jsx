@@ -173,9 +173,10 @@ function Overview({ products, onEdit, onNew }) {
 // PRODUCTS TABLE
 // ════════════════════════════════════════════════════════════
 function Products({ products, categories, onEdit, onDelete, onNew }) {
-  const [search, setSearch]     = useState('')
+  const [search, setSearch]       = useState('')
   const [catFilter, setCatFilter] = useState('todos')
   const [confirmId, setConfirmId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
 
   const filtered = products
     .filter(p => catFilter === 'todos' || p.category === catFilter)
@@ -278,7 +279,23 @@ function Products({ products, categories, onEdit, onDelete, onNew }) {
                       {confirmId === p.id ? (
                         <div className="dash-confirm">
                           <span>Excluir?</span>
-                          <button className="dash-action dash-action--danger" onClick={() => { onDelete(p.id); setConfirmId(null) }}>Sim</button>
+                          <button
+                            className="dash-action dash-action--danger"
+                            disabled={deletingId === p.id}
+                            onClick={async () => {
+                              setDeletingId(p.id)
+                              try {
+                                await onDelete(p.id)
+                                setConfirmId(null)
+                              } catch (err) {
+                                alert('Erro ao excluir: ' + err.message)
+                              } finally {
+                                setDeletingId(null)
+                              }
+                            }}
+                          >
+                            {deletingId === p.id ? '⏳' : 'Sim'}
+                          </button>
                           <button className="dash-action" onClick={() => setConfirmId(null)}>Não</button>
                         </div>
                       ) : (
@@ -311,6 +328,8 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
   const [form, setForm]         = useState(initial)
   const [preview, setPreview]   = useState(initial.image)
   const [saved, setSaved]       = useState(false)
+  const [saving, setSaving]     = useState(false)
+  const [saveErr, setSaveErr]   = useState('')
 
   useEffect(() => { setPreview(form.image) }, [form.image])
 
@@ -327,8 +346,10 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
     }))
   }
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
+    setSaving(true)
+    setSaveErr('')
     const data = {
       ...form,
       price: Number(form.price),
@@ -339,9 +360,15 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
       sizes: form.sizes.length ? form.sizes : null,
     }
     if (!data.images.length) data.images = [data.image]
-    onSave(data)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    try {
+      await onSave(data)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setSaveErr(err.message || 'Erro ao salvar')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const isCamiseta = form.category === 'camisetas'
@@ -505,10 +532,15 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
             )}
           </div>
 
+          {saveErr && (
+            <div style={{ margin:'0 24px 12px', padding:'10px 14px', background:'#fee2e2', color:'#991b1b', borderRadius:8, fontSize:13 }}>
+              ⚠️ {saveErr}
+            </div>
+          )}
           <div className="drawer__footer">
-            <button type="button" className="dash-btn dash-btn--ghost" onClick={onClose}>Cancelar</button>
-            <button type="submit" className={`dash-btn dash-btn--gold${saved ? ' saved' : ''}`}>
-              {saved ? '✓ Salvo!' : editing ? 'Salvar alterações' : 'Criar produto'}
+            <button type="button" className="dash-btn dash-btn--ghost" onClick={onClose} disabled={saving}>Cancelar</button>
+            <button type="submit" className={`dash-btn dash-btn--gold${saved ? ' saved' : ''}`} disabled={saving}>
+              {saving ? '⏳ Salvando...' : saved ? '✓ Salvo!' : editing ? 'Salvar alterações' : 'Criar produto'}
             </button>
           </div>
         </form>
@@ -547,10 +579,14 @@ export default function Dash() {
   function openNew() {
     setDrawer({ editing: false, id: null, initial: EMPTY })
   }
-  function saveDrawer(data) {
-    if (drawer.editing) updateProduct(drawer.id, data)
-    else addProduct(data)
-    setDrawer(null)
+  async function saveDrawer(data) {
+    try {
+      if (drawer.editing) await updateProduct(drawer.id, data)
+      else await addProduct(data)
+      setDrawer(null)
+    } catch (err) {
+      alert('Erro ao salvar produto: ' + err.message)
+    }
   }
 
   if (!authed) return <DashLogin onAuth={() => setAuthed(true)} />

@@ -109,20 +109,20 @@ export function ProductsProvider({ children }) {
   }
 
   async function addProduct(product) {
-    if (!supabase) return null
+    if (!supabase) throw new Error('Supabase não configurado')
     const { data, error } = await supabase
       .from('products')
       .insert(toDB(product))
       .select()
       .single()
 
-    if (error) { console.error('[Supabase] addProduct:', error.message); return null }
+    if (error) throw new Error(error.message)
     setProducts(prev => [...prev, fromDB(data)])
     return fromDB(data)
   }
 
   async function updateProduct(id, product) {
-    if (!supabase) return
+    if (!supabase) throw new Error('Supabase não configurado')
     const { data, error } = await supabase
       .from('products')
       .update(toDB(product))
@@ -130,18 +130,18 @@ export function ProductsProvider({ children }) {
       .select()
       .single()
 
-    if (error) { console.error('[Supabase] updateProduct:', error.message); return }
+    if (error) throw new Error(error.message)
     setProducts(prev => prev.map(p => p.id === id ? fromDB(data) : p))
   }
 
   async function deleteProduct(id) {
-    if (!supabase) return
+    if (!supabase) throw new Error('Supabase não configurado')
     const { error } = await supabase
       .from('products')
       .delete()
       .eq('id', id)
 
-    if (error) { console.error('[Supabase] deleteProduct:', error.message); return }
+    if (error) throw new Error(error.message)
     setProducts(prev => prev.filter(p => p.id !== id))
   }
 
