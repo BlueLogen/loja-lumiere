@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useProducts } from '../context/ProductsContext'
+import { supabase } from '../lib/supabase'
 
 const PASS    = 'lumiere2025'
 const AUTH_KEY = 'dash_auth'
@@ -324,14 +325,113 @@ function Products({ products, categories, onEdit, onDelete, onNew }) {
 // ════════════════════════════════════════════════════════════
 // PRODUCT DRAWER (add / edit)
 // ════════════════════════════════════════════════════════════
+// ── Upload de imagem para Supabase Storage ─────────────────
+async function uploadImage(file) {
+  const ext  = file.name.split('.').pop()
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const { error } = await supabase.storage.from('products').upload(path, file, { upsert: false })
+  if (error) throw new Error(error.message)
+  const { data } = supabase.storage.from('products').getPublicUrl(path)
+  return data.publicUrl
+}
+
+// ── Componente ImageDropzone ────────────────────────────────
+function ImageDropzone({ value, onChange, label = 'Imagem principal', required = false }) {
+  const [dragging, setDragging] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadErr, setUploadErr] = useState('')
+  const inputRef = useRef()
+
+  const handleFile = useCallback(async (file) => {
+    if (!file || !file.type.startsWith('image/')) {
+      setUploadErr('Arquivo inválido — use JPG, PNG, WebP ou GIF.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadErr('Imagem muito grande (máx 5 MB).')
+      return
+    }
+    setUploading(true)
+    setUploadErr('')
+    try {
+      const url = await uploadImage(file)
+      onChange(url)
+    } catch (err) {
+      setUploadErr('Erro no upload: ' + err.message)
+    } finally {
+      setUploading(false)
+    }
+  }, [onChange])
+
+  function onDrop(e) {
+    e.preventDefault(); setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFile(file)
+  }
+
+  return (
+    <div className="drawer-field">
+      <label>{label} {required && '*'}</label>
+
+      {/* Zona de drop */}
+      <div
+        className={`img-drop-zone${dragging ? ' drag-over' : ''}${uploading ? ' uploading' : ''}`}
+        onDragOver={e => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        onClick={() => !uploading && inputRef.current?.click()}
+      >
+        {uploading ? (
+          <div className="img-drop-zone__status">
+            <span className="img-drop-spinner" />
+            <p>Enviando imagem…</p>
+          </div>
+        ) : value ? (
+          <div className="img-drop-zone__preview">
+            <img src={value} alt="preview" onError={() => onChange('')} />
+            <div className="img-drop-zone__overlay">
+              <span>🔄 Trocar imagem</span>
+            </div>
+          </div>
+        ) : (
+          <div className="img-drop-zone__empty">
+            <span className="img-drop-zone__icon">🖼️</span>
+            <p className="img-drop-zone__main">Arraste uma imagem aqui</p>
+            <p className="img-drop-zone__sub">ou clique para selecionar do PC</p>
+            <p className="img-drop-zone__hint">JPG, PNG, WebP, GIF · máx 5 MB</p>
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          style={{ display:'none' }}
+          onChange={e => { const f = e.target.files[0]; if (f) handleFile(f) }}
+        />
+      </div>
+
+      {uploadErr && <p className="img-drop-zone__err">⚠️ {uploadErr}</p>}
+
+      {/* URL manual como alternativa */}
+      <div className="img-drop-zone__url-row">
+        <span>ou cole uma URL:</span>
+        <input
+          type="url"
+          placeholder="https://..."
+          value={value}
+          onChange={e => onChange(e.target.value)}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════════
 function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
   const [form, setForm]         = useState(initial)
-  const [preview, setPreview]   = useState(initial.image)
   const [saved, setSaved]       = useState(false)
   const [saving, setSaving]     = useState(false)
   const [saveErr, setSaveErr]   = useState('')
-
-  useEffect(() => { setPreview(form.image) }, [form.image])
 
   function set(field, val) { setForm(f => ({ ...f, [field]: val })) }
 
@@ -390,31 +490,32 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
           {/* Preview + imagem */}
           <div className="drawer-section">
             <div className="drawer-section__title">📷 Imagem principal</div>
-            <div className="drawer-img-preview">
-              {preview
-                ? <img src={preview} alt="preview" onError={() => setPreview('')} />
-                : <div className="drawer-img-placeholder">🖼️ Pré-visualização</div>
-              }
-            </div>
-            <div className="drawer-field">
-              <label>URL da imagem *</label>
-              <input required type="url" placeholder="https://..." value={form.image}
-                onChange={e => set('image', e.target.value)} />
-            </div>
-            <div className="drawer-field">
-              <label>Imagens da galeria</label>
+            <ImageDropzone
+              label="Imagem principal"
+              required
+              value={form.image}
+              onChange={val => set('image', val)}
+            />
+            <div className="drawer-field" style={{ marginTop: 16 }}>
+              <label>Imagens da galeria <span className="drawer-hint">opcional</span></label>
               {form.images.map((img, i) => (
-                <div key={i} className="drawer-img-row">
-                  <input type="url" placeholder={`Imagem ${i+1}`} value={img}
-                    onChange={e => handleImg(i, e.target.value)} />
-                  {form.images.length > 1 &&
-                    <button type="button" onClick={() => setForm(f => ({ ...f, images: f.images.filter((_,j)=>j!==i) }))}>✕</button>
-                  }
+                <div key={i} className="drawer-img-row" style={{ marginBottom: 6 }}>
+                  <ImageDropzone
+                    label={`Galeria ${i + 1}`}
+                    value={img}
+                    onChange={val => handleImg(i, val)}
+                  />
+                  {form.images.length > 1 && (
+                    <button type="button" className="img-drop-remove"
+                      onClick={() => setForm(f => ({ ...f, images: f.images.filter((_,j) => j !== i) }))}>
+                      🗑️ Remover
+                    </button>
+                  )}
                 </div>
               ))}
               <button type="button" className="drawer-add-img"
                 onClick={() => setForm(f => ({ ...f, images: [...f.images, ''] }))}>
-                + Adicionar imagem
+                + Adicionar imagem da galeria
               </button>
             </div>
           </div>
