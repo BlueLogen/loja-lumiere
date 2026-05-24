@@ -62,24 +62,38 @@ export function ProductsProvider({ children }) {
 
   async function fetchProducts() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('id', { ascending: true })
 
-    if (error) {
-      console.error('[Supabase] Erro ao buscar produtos:', error.message)
-      setProducts(seedProducts) // fallback local
-    } else if (data.length === 0) {
-      // Tabela vazia → semeia com os produtos padrão
-      await seedDatabase()
-    } else {
-      setProducts(data.map(fromDB))
+    // Sem Supabase configurado → usa dados locais
+    if (!supabase) {
+      setProducts(seedProducts)
+      setLoading(false)
+      return
     }
+
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('id', { ascending: true })
+
+      if (error) {
+        console.error('[Supabase] Erro ao buscar produtos:', error.message)
+        setProducts(seedProducts)
+      } else if (data.length === 0) {
+        await seedDatabase()
+      } else {
+        setProducts(data.map(fromDB))
+      }
+    } catch (err) {
+      console.error('[Supabase] Falha de conexão:', err.message)
+      setProducts(seedProducts)
+    }
+
     setLoading(false)
   }
 
   async function seedDatabase() {
+    if (!supabase) { setProducts(seedProducts); return }
     const rows = seedProducts.map(toDB)
     const { data, error } = await supabase
       .from('products')
@@ -95,6 +109,7 @@ export function ProductsProvider({ children }) {
   }
 
   async function addProduct(product) {
+    if (!supabase) return null
     const { data, error } = await supabase
       .from('products')
       .insert(toDB(product))
@@ -107,6 +122,7 @@ export function ProductsProvider({ children }) {
   }
 
   async function updateProduct(id, product) {
+    if (!supabase) return
     const { data, error } = await supabase
       .from('products')
       .update(toDB(product))
@@ -119,6 +135,7 @@ export function ProductsProvider({ children }) {
   }
 
   async function deleteProduct(id) {
+    if (!supabase) return
     const { error } = await supabase
       .from('products')
       .delete()
