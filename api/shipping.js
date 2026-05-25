@@ -8,7 +8,7 @@
  * Retorna array de opções de frete da Melhor Envio.
  */
 
-const STORE_CEP   = process.env.STORE_CEP   || '01310100'   // CEP de origem (loja)
+const STORE_CEP   = process.env.STORE_CEP   || '11735218'   // CEP de origem (loja)
 const ME_TOKEN    = process.env.MELHOR_ENVIO_TOKEN
 const ME_URL      = 'https://melhorenvio.com.br/api/v2/me/shipment/calculate'
 const USER_AGENT  = 'BasicBijus contato@basicbijus.com.br'
