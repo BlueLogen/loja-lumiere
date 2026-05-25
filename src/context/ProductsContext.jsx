@@ -11,6 +11,7 @@ const CATEGORIES = [
   { id: 'brincos',   label: 'Brincos' },
   { id: 'aneis',     label: 'Anéis' },
   { id: 'pulseiras', label: 'Pulseiras' },
+  { id: 'outros',    label: 'Outros' },
 ]
 
 // ── Mapeamento DB (snake_case) ↔ App (camelCase) ──────────

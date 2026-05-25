@@ -22,11 +22,11 @@ const BADGE_PRESETS = [
 const ALL_SIZES = ['PP','P','M','G','GG','XGG']
 const CAT_LABEL = {
   colares:'Colares', brincos:'Brincos', aneis:'Anéis',
-  pulseiras:'Pulseiras', camisetas:'Camisetas',
+  pulseiras:'Pulseiras', camisetas:'Camisetas', outros:'Outros',
 }
 const CAT_ICON = {
   colares:'📿', brincos:'💎', aneis:'💍',
-  pulseiras:'✨', camisetas:'👕',
+  pulseiras:'✨', camisetas:'👕', outros:'🛍️',
 }
 
 // ── helpers ───────────────────────────────────────────────

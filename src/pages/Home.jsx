@@ -99,6 +99,7 @@ const catIcons = [
   { id:'brincos',   label:'Brincos',   Icon:IconEarring,  bg:'#ecfdf5', border:'#a7f3d0' },
   { id:'aneis',     label:'Anéis',     Icon:IconRing,     bg:'#f5f3ff', border:'#ddd6fe' },
   { id:'pulseiras', label:'Pulseiras', Icon:IconBracelet, bg:'#eff6ff', border:'#bfdbfe' },
+  { id:'outros',    label:'Outros',    Icon:IconShopBag,  bg:'#f0fdf4', border:'#bbf7d0' },
   { id:'todos',     label:'Ver tudo',  Icon:IconShopBag,  bg:'#eef2ff', border:'#c7d2fe' },
 ]
 

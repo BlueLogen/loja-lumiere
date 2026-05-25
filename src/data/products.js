@@ -250,4 +250,5 @@ export const categories = [
   { id: 'brincos', label: 'Brincos' },
   { id: 'aneis', label: 'Anéis' },
   { id: 'pulseiras', label: 'Pulseiras' },
+  { id: 'outros', label: 'Outros' },
 ]
