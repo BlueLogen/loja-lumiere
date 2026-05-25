@@ -61,6 +61,7 @@ export default async function handler(req, res) {
           receipt:  false,
           own_hand: false,
         },
+        services: '1,2,17', // Apenas Correios: PAC, SEDEX, Mini Envios
       }),
     })
 
