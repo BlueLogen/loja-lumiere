@@ -913,9 +913,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .size-btn:hover { border-color: var(--gold); color: var(--black); }
 .size-btn.active { border-color: var(--gold); background: var(--gold); color: var(--black); }
-.size-btn__extra { font-size: 9px; font-weight: 700; color: #2563eb; line-height: 1; }
+.size-btn__extra { font-size: 9px; font-weight: 700; color: #6b7280; line-height: 1; }
 .size-btn.active .size-btn__extra { color: #111; }
-.detail-size-extra { font-size: 12px; color: #2563eb; font-weight: 500; margin-left: 6px; }
 
 .detail-sticky {
   position: fixed;
@@ -2408,5 +2407,5 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .size-price-row__input { display: flex; align-items: center; gap: 5px; border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 5px 10px; background: white; flex: 1; }
 .size-price-row__input span { font-size: .78rem; color: #9ca3af; white-space: nowrap; }
 .size-price-row__input input { border: none; outline: none; font-size: .85rem; font-family: var(--font-sans); color: #111; width: 80px; }
-.size-price-row__total { font-size: .78rem; color: #2563eb; font-weight: 600; white-space: nowrap; }
+.size-price-row__total { font-size: .75rem; color: #9ca3af; font-weight: 500; white-space: nowrap; font-style: italic; }
 .dash-side-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 199; }

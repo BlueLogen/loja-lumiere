@@ -25,9 +25,10 @@ export default function ProductDetail() {
   const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4)
   const sold = product.sold || 1200
 
-  // Preço final = base + acréscimo do tamanho selecionado
-  const sizeExtra = selectedSize && product.sizePrices?.[selectedSize] ? product.sizePrices[selectedSize] : 0
-  const finalPrice = product.price + sizeExtra
+  // Preço final = preço fixo do tamanho (se definido) OU preço base
+  const finalPrice = (selectedSize && product.sizePrices?.[selectedSize] != null)
+    ? product.sizePrices[selectedSize]
+    : product.price
 
   function handleAdd() {
     if (product.sizes?.length && !selectedSize) {
@@ -79,7 +80,6 @@ export default function ProductDetail() {
         <div className="detail-info__price-row">
           <span className="detail-info__price">
             R$ {finalPrice.toFixed(2).replace('.', ',')}
-            {sizeExtra > 0 && <small className="detail-size-extra"> (+R$ {sizeExtra.toFixed(2).replace('.', ',')} tam.)</small>}
           </span>
           {product.originalPrice && (
             <span className="product-card__original">
@@ -103,13 +103,13 @@ export default function ProductDetail() {
           <div className="size-selector">
             <p className="size-selector__label">
               Tamanho: {selectedSize
-                ? <strong>{selectedSize}{sizeExtra > 0 ? ` (+R$ ${sizeExtra.toFixed(2).replace('.', ',')})` : ''}</strong>
+                ? <strong>{selectedSize}</strong>
                 : <span className="size-selector__hint">selecione</span>
               }
             </p>
             <div className="size-selector__options">
               {product.sizes.map(s => {
-                const extra = product.sizePrices?.[s] || 0
+                const sizePrice = product.sizePrices?.[s]
                 return (
                   <button
                     key={s}
@@ -117,7 +117,11 @@ export default function ProductDetail() {
                     onClick={() => setSelectedSize(s)}
                   >
                     <span>{s}</span>
-                    {extra > 0 && <small className="size-btn__extra">+{extra.toFixed(0)}</small>}
+                    {sizePrice != null && (
+                      <small className="size-btn__extra">
+                        R${Number(sizePrice).toFixed(0)}
+                      </small>
+                    )}
                   </button>
                 )
               })}

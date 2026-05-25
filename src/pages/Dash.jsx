@@ -451,10 +451,13 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
     setSaving(true)
     setSaveErr('')
     const sizes = form.hasSizes ? form.sizes : []
-    // limpa preços de tamanhos que foram desmarcados
+    // salva apenas tamanhos ativos; valor vazio = usa preço base
     const sizePrices = {}
     if (form.hasSizes) {
-      sizes.forEach(s => { sizePrices[s] = Number(form.sizePrices?.[s] || 0) })
+      sizes.forEach(s => {
+        const v = form.sizePrices?.[s]
+        if (v !== '' && v != null && !isNaN(Number(v))) sizePrices[s] = Number(v)
+      })
     }
     const data = {
       ...form,
@@ -658,36 +661,38 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
                   </div>
                 </div>
 
-                {/* Diferença de preço por tamanho */}
+                {/* Preço por tamanho */}
                 {form.sizes.length > 0 && (
                   <div className="drawer-field">
                     <label>
-                      Diferença de preço por tamanho
-                      <span className="drawer-hint"> (0 = mesmo preço base)</span>
+                      Preço por tamanho
+                      <span className="drawer-hint"> (deixe em branco para usar o preço base)</span>
                     </label>
                     <div className="size-prices-grid">
                       {form.sizes.map(s => (
                         <div key={s} className="size-price-row">
                           <span className="size-price-row__label">{s}</span>
                           <div className="size-price-row__input">
-                            <span>+R$</span>
+                            <span>R$</span>
                             <input
                               type="number"
                               min="0"
                               step="0.01"
-                              placeholder="0,00"
+                              placeholder={form.price || '0,00'}
                               value={form.sizePrices?.[s] ?? ''}
                               onChange={e => set('sizePrices', {
                                 ...form.sizePrices,
-                                [s]: e.target.value === '' ? 0 : Number(e.target.value)
+                                [s]: e.target.value === '' ? '' : Number(e.target.value)
                               })}
                             />
                           </div>
-                          {form.price && (
-                            <span className="size-price-row__total">
-                              = R$ {(Number(form.price) + Number(form.sizePrices?.[s] || 0)).toFixed(2).replace('.', ',')}
-                            </span>
-                          )}
+                          <span className="size-price-row__total">
+                            {form.sizePrices?.[s]
+                              ? `R$ ${Number(form.sizePrices[s]).toFixed(2).replace('.', ',')}`
+                              : form.price
+                                ? `↳ base R$ ${Number(form.price).toFixed(2).replace('.', ',')}`
+                                : ''}
+                          </span>
                         </div>
                       ))}
                     </div>
