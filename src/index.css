@@ -2129,7 +2129,104 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .field-error { font-size: .72rem; color: #c0392b; margin-top: 2px; }
 .input--error { border-color: #c0392b !important; }
 
-/* Frete badge */
+/* Frete loading */
+.frete-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--gray);
+  font-size: .88rem;
+}
+.frete-loading__spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #e0e0e0;
+  border-top-color: #111;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Frete subtitle */
+.frete-subtitle {
+  font-size: .8rem;
+  color: var(--gray);
+  margin: -6px 0 12px;
+}
+
+/* Frete options list */
+.frete-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.frete-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color .18s, background .18s, box-shadow .18s;
+  background: #fff;
+}
+.frete-option input[type="radio"] { display: none; }
+
+.frete-option:hover {
+  border-color: #111;
+  background: #fafafa;
+}
+.frete-option--active {
+  border-color: #111 !important;
+  background: #f9f9f9;
+  box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+}
+.frete-option--free {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.frete-option--free.frete-option--active {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+}
+
+.frete-option__icon { font-size: 1.4rem; flex-shrink: 0; width: 36px; display: flex; align-items: center; justify-content: center; }
+.frete-option__logo { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; }
+
+.frete-option__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.frete-option__info strong { font-size: .88rem; color: var(--navy-dark); }
+.frete-option__info small  { font-size: .75rem; color: var(--gray); }
+
+.frete-option__price {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  white-space: nowrap;
+  text-align: right;
+}
+.frete-option__price.free-shipping { color: #2563eb; }
+.frete-option__crossed {
+  font-weight: 400;
+  color: var(--gray);
+  text-decoration: line-through;
+  margin-right: 4px;
+  font-size: .8rem;
+}
+
+/* Summary carrier / days */
+.summary-carrier { color: var(--gray); font-size: .78rem; font-weight: 400; }
+.summary-days    { color: var(--gray); font-size: .78rem; }
+
+/* Frete badge (kept for potential reuse) */
 .frete-badge {
   display: flex;
   align-items: center;

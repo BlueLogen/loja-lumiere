@@ -23,7 +23,7 @@ function spawnEmojiExplosion(originEl, onDone) {
     const angle = (Math.PI * 2 * i / count) + (Math.random() - 0.5) * 0.7
     const dist  = 100 + Math.random() * 220
     const dx    = Math.cos(angle) * dist
-    const dy    = Math.sin(angle) * dist - 80   // puxa levemente para cima
+    const dy    = Math.sin(angle) * dist - 80
     const size  = 20 + Math.random() * 22
     const dur   = 650 + Math.random() * 500
     const delay = Math.random() * 120
@@ -41,37 +41,88 @@ function spawnEmojiExplosion(originEl, onDone) {
     wrap.appendChild(el)
   }
 
-  // Botão pulsa
   originEl.style.transition = 'transform .15s'
   originEl.style.transform  = 'scale(1.08)'
   setTimeout(() => { originEl.style.transform = 'scale(1)' }, 150)
-
   setTimeout(() => { wrap.remove(); onDone() }, 1100)
 }
 
-// ── Tabela de frete por UF ──────────────────────────────────
-const FRETE_UF = {
-  SP: 12.90,
-  MG: 15.90, RJ: 15.90, ES: 15.90,
-  PR: 15.90, SC: 15.90, RS: 15.90,
-  GO: 19.90, MT: 19.90, MS: 19.90, DF: 19.90,
-  BA: 22.90, PE: 22.90, CE: 22.90, MA: 22.90,
-  PB: 22.90, RN: 22.90, AL: 22.90, SE: 22.90, PI: 22.90,
-  PA: 24.90, AM: 24.90, TO: 24.90, RO: 24.90,
-  AC: 29.90, RR: 29.90, AP: 29.90,
+// ── Ícones por modalidade ──────────────────────────────────
+const SERVICE_ICON = {
+  'PAC':         '📦',
+  'SEDEX':       '⚡',
+  'Mini Envios': '📬',
+  '.Package':    '📦',
+  'Impresso':    '📮',
+}
+function serviceIcon(name = '') {
+  for (const [key, icon] of Object.entries(SERVICE_ICON)) {
+    if (name.toLowerCase().includes(key.toLowerCase())) return icon
+  }
+  return '🚚'
 }
 
-function calcFrete(estado, subtotal) {
-  if (subtotal >= 299) return 0
-  if (!estado) return null
-  return FRETE_UF[estado] ?? 24.90
+// ── Normaliza resposta da Melhor Envio ─────────────────────
+function normalizeME(data, subtotal) {
+  const valid = (Array.isArray(data) ? data : [])
+    .filter(s => !s.error && s.price != null)
+    .sort((a, b) => Number(a.price) - Number(b.price))
+
+  const opts = valid.map(s => ({
+    id:      String(s.id),
+    icon:    serviceIcon(s.name),
+    name:    s.name,
+    carrier: s.company?.name || 'Correios',
+    price:   Number(s.custom_price ?? s.price),
+    days:    s.custom_delivery_range
+               ? `${s.custom_delivery_range.min} a ${s.custom_delivery_range.max} dias úteis`
+               : `${s.delivery_time} dias úteis`,
+    logo:    s.company?.picture || null,
+  }))
+
+  // Frete grátis no PAC quando subtotal >= 299
+  if (subtotal >= 299 && opts.length > 0) {
+    const pac = opts.find(o => o.name.toLowerCase().includes('pac')) || opts[0]
+    opts.unshift({
+      ...pac,
+      id:    'gratis',
+      icon:  '🎉',
+      name:  `${pac.name} Grátis`,
+      price: 0,
+      free:  true,
+    })
+  }
+
+  return opts
 }
 
-function freteInfo(estado, subtotal) {
-  if (subtotal >= 299) return { label: 'Grátis 🎉', value: 0, free: true }
-  if (!estado) return { label: 'Informe o CEP', value: null, free: false }
-  const v = FRETE_UF[estado] ?? 24.90
-  return { label: `R$ ${v.toFixed(2).replace('.', ',')}`, value: v, free: false }
+// ── Fallback estático (caso API falhe) ─────────────────────
+const UF_TIER = {
+  SP:1, MG:2, RJ:2, ES:2, PR:2, SC:2, RS:2,
+  GO:3, MT:3, MS:3, DF:3,
+  BA:4, PE:4, CE:4, MA:4, PB:4, RN:4, AL:4, SE:4, PI:4,
+  PA:5, AM:5, TO:5, RO:5, AC:6, RR:6, AP:6,
+}
+const FRETE_TIERS = [
+  { pac:[12.90,3,5],  mini:[15.90,2,4],  sedex:[22.90,1,2]  },
+  { pac:[15.90,4,7],  mini:[19.90,3,5],  sedex:[27.90,1,3]  },
+  { pac:[19.90,5,8],  mini:[23.90,4,6],  sedex:[32.90,2,4]  },
+  { pac:[22.90,6,10], mini:[27.90,5,8],  sedex:[37.90,2,5]  },
+  { pac:[26.90,7,12], mini:[31.90,6,9],  sedex:[42.90,3,6]  },
+  { pac:[31.90,8,15], mini:[38.90,7,11], sedex:[52.90,4,8]  },
+]
+function staticFreteOptions(uf, subtotal) {
+  const t = FRETE_TIERS[(UF_TIER[uf] ?? 4) - 1]
+  const opts = [
+    { id:'pac',   icon:'📦', name:'PAC',         carrier:'Correios', price:t.pac[0],   days:`${t.pac[1]} a ${t.pac[2]} dias úteis`   },
+    { id:'mini',  icon:'📬', name:'Mini Envios', carrier:'Correios', price:t.mini[0],  days:`${t.mini[1]} a ${t.mini[2]} dias úteis`  },
+    { id:'sedex', icon:'⚡', name:'SEDEX',       carrier:'Correios', price:t.sedex[0], days:`${t.sedex[1]} a ${t.sedex[2]} dias úteis` },
+  ]
+  if (subtotal >= 299) {
+    opts.unshift({ id:'gratis', icon:'🎉', name:'PAC Grátis', carrier:'Correios', price:0,
+      days:`${t.pac[1]} a ${t.pac[2]} dias úteis`, free:true })
+  }
+  return opts
 }
 
 // ── Máscaras ──────────────────────────────────────────────
@@ -118,9 +169,9 @@ function StepBar({ current }) {
 }
 
 // ── OrderSummary ──────────────────────────────────────────
-function OrderSummary({ items, subtotal, estado }) {
-  const frete = freteInfo(estado, subtotal)
-  const finalTotal = frete.value !== null ? subtotal + frete.value : null
+function OrderSummary({ items, subtotal, selectedShipping }) {
+  const freteValue = selectedShipping ? selectedShipping.price : null
+  const finalTotal = freteValue !== null ? subtotal + freteValue : null
 
   return (
     <div className="checkout-summary">
@@ -146,11 +197,25 @@ function OrderSummary({ items, subtotal, estado }) {
           <span>R$ {subtotal.toFixed(2).replace('.', ',')}</span>
         </div>
         <div className="checkout-summary__row">
-          <span>Frete</span>
-          <span className={frete.free ? 'free-shipping' : frete.value === null ? 'frete-pending' : ''}>
-            {frete.label}
+          <span>
+            Frete
+            {selectedShipping && (
+              <small className="summary-carrier"> · {selectedShipping.name}</small>
+            )}
+          </span>
+          <span className={selectedShipping?.free ? 'free-shipping' : freteValue === null ? 'frete-pending' : ''}>
+            {selectedShipping
+              ? (selectedShipping.free
+                  ? 'Grátis 🎉'
+                  : `R$ ${freteValue.toFixed(2).replace('.', ',')}`)
+              : 'Selecione o frete'}
           </span>
         </div>
+        {selectedShipping && (
+          <div className="checkout-summary__row">
+            <small className="summary-days">⏱ {selectedShipping.days}</small>
+          </div>
+        )}
         <div className="checkout-summary__row checkout-summary__row--total">
           <span>Total</span>
           <strong>
@@ -165,14 +230,13 @@ function OrderSummary({ items, subtotal, estado }) {
 }
 
 // ── STEP 1: ENTREGA ───────────────────────────────────────
-function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
+function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount,
+                       selectedShipping, onSelectShipping, freteOpts, freteLoading }) {
   const [cepLoading, setCepLoading] = useState(false)
-  const [cepError, setCepError]     = useState('')
-  const [bursting, setBursting]     = useState(false)
-  const cepRef = useRef(null)
+  const [cepError,   setCepError]   = useState('')
+  const [freteError, setFreteError] = useState('')
+  const [bursting,   setBursting]   = useState(false)
   const btnRef = useRef(null)
-
-  const frete = freteInfo(data.estado, subtotal)
 
   async function buscarCep(raw) {
     const digits = raw.replace(/\D/g, '')
@@ -186,11 +250,13 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
         setCepError('CEP não encontrado. Verifique e tente novamente.')
       } else {
         onBulkChange({
+          cep:    raw,
           rua:    json.logradouro || '',
           bairro: json.bairro     || '',
           cidade: json.localidade || '',
           estado: json.uf         || '',
         })
+        onSelectShipping(null)
       }
     } catch {
       setCepError('Erro ao consultar CEP. Verifique sua conexão.')
@@ -205,8 +271,18 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
     if (masked.replace(/\D/g, '').length === 8) buscarCep(masked)
   }
 
+  function handleStateChange(e) {
+    onChange('estado', e.target.value)
+    onSelectShipping(null)
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
+    if (!selectedShipping) {
+      setFreteError('Selecione uma opção de frete para continuar.')
+      return
+    }
+    setFreteError('')
     if (bursting) return
     setBursting(true)
     spawnEmojiExplosion(btnRef.current, () => {
@@ -253,7 +329,6 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
             <label>CEP *</label>
             <div className="cep-wrapper">
               <input
-                ref={cepRef}
                 required
                 placeholder="00000-000"
                 value={data.cep}
@@ -298,7 +373,7 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
           </div>
           <div className="checkout-field checkout-field--sm">
             <label>Estado *</label>
-            <select required value={data.estado} onChange={e => onChange('estado', e.target.value)}>
+            <select required value={data.estado} onChange={handleStateChange}>
               <option value="">UF</option>
               {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
                 <option key={uf} value={uf}>{uf}</option>
@@ -306,24 +381,71 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal }) {
             </select>
           </div>
         </div>
-
-        {/* Frete calculado */}
-        {data.estado && (
-          <div className={`frete-badge${frete.free ? ' frete-badge--free' : ''}`}>
-            <span className="frete-badge__icon">{frete.free ? '🎉' : '🚚'}</span>
-            <div>
-              <strong>{frete.free ? 'Frete Grátis!' : `Frete: ${frete.label}`}</strong>
-              {frete.free
-                ? <small>Parabéns! Seu pedido tem frete grátis.</small>
-                : <small>Entrega de 3 a 7 dias úteis para {data.cidade}/{data.estado}</small>
-              }
-            </div>
-          </div>
-        )}
       </div>
 
-      <button ref={btnRef} type="submit" className={`btn btn--gold btn--full btn--lg${bursting ? ' btn--bursting' : ''}`} disabled={cepLoading || bursting}>
-        {cepLoading ? 'Buscando CEP...' : bursting ? '🎉 Ótimo!' : 'Continuar para pagamento →'}
+      {/* Opções de frete */}
+      {data.estado && (
+        <div className="checkout-form__section">
+          <h3>Opções de entrega</h3>
+          <p className="frete-subtitle">
+            Envio para {data.cidade || data.estado}/{data.estado} · CEP {data.cep}
+          </p>
+
+          {freteLoading ? (
+            <div className="frete-loading">
+              <span className="frete-loading__spinner" />
+              <span>Calculando frete com Melhor Envio…</span>
+            </div>
+          ) : (
+            <div className="frete-options">
+              {freteOpts.map(opt => (
+                <label
+                  key={opt.id}
+                  className={`frete-option${selectedShipping?.id === opt.id ? ' frete-option--active' : ''}${opt.free ? ' frete-option--free' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="frete"
+                    value={opt.id}
+                    checked={selectedShipping?.id === opt.id}
+                    onChange={() => { onSelectShipping(opt); setFreteError('') }}
+                  />
+                  <span className="frete-option__icon">
+                    {opt.logo
+                      ? <img src={opt.logo} alt={opt.carrier} className="frete-option__logo" />
+                      : opt.icon}
+                  </span>
+                  <span className="frete-option__info">
+                    <strong>{opt.name}</strong>
+                    <small>{opt.carrier} · {opt.days}</small>
+                  </span>
+                  <span className={`frete-option__price${opt.free ? ' free-shipping' : ''}`}>
+                    {opt.free
+                      ? <><s className="frete-option__crossed">
+                          R$ {freteOpts.find(o => !o.free && o.name.toLowerCase().includes('pac'))?.price.toFixed(2).replace('.', ',') || '—'}
+                        </s> Grátis</>
+                      : `R$ ${opt.price.toFixed(2).replace('.', ',')}`
+                    }
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {freteError && <span className="field-error" style={{ display:'block', marginTop:8 }}>{freteError}</span>}
+        </div>
+      )}
+
+      <button
+        ref={btnRef}
+        type="submit"
+        className={`btn btn--gold btn--full btn--lg${bursting ? ' btn--bursting' : ''}`}
+        disabled={cepLoading || bursting || freteLoading}
+      >
+        {cepLoading     ? 'Buscando CEP…'
+          : freteLoading  ? 'Calculando frete…'
+          : bursting      ? '🎉 Ótimo!'
+          : 'Continuar para pagamento →'}
       </button>
     </form>
   )
@@ -449,8 +571,9 @@ function StepPagamento({ data, onChange, onNext, onBack, subtotal, frete }) {
 }
 
 // ── STEP 3: CONFIRMAÇÃO ───────────────────────────────────
-function StepConfirmacao({ entrega, pagamento, items, subtotal, frete, orderNum }) {
-  const finalTotal  = subtotal + (frete ?? 0)
+function StepConfirmacao({ entrega, pagamento, items, subtotal, shipping, orderNum }) {
+  const freteVal    = shipping?.price ?? 0
+  const finalTotal  = subtotal + freteVal
   const metodoLabel = { cartao: 'Cartão de crédito', pix: 'PIX', boleto: 'Boleto bancário' }
 
   return (
@@ -467,13 +590,27 @@ function StepConfirmacao({ entrega, pagamento, items, subtotal, frete, orderNum 
         </div>
         <div className="checkout-success__row">
           <span>Endereço</span>
-          <strong>{entrega.rua}, {entrega.numero}{entrega.complemento ? ` — ${entrega.complemento}` : ''}<br/>{entrega.bairro}, {entrega.cidade}/{entrega.estado} · CEP {entrega.cep}</strong>
+          <strong>
+            {entrega.rua}, {entrega.numero}
+            {entrega.complemento ? ` — ${entrega.complemento}` : ''}<br/>
+            {entrega.bairro}, {entrega.cidade}/{entrega.estado} · CEP {entrega.cep}
+          </strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Modalidade</span>
+          <strong>
+            {shipping?.icon} {shipping?.name} ({shipping?.carrier})
+          </strong>
         </div>
         <div className="checkout-success__row">
           <span>Frete</span>
-          <strong className={frete === 0 ? 'free-shipping' : ''}>
-            {frete === 0 ? 'Grátis 🎉' : `R$ ${frete.toFixed(2).replace('.', ',')}`}
+          <strong className={freteVal === 0 ? 'free-shipping' : ''}>
+            {freteVal === 0 ? 'Grátis 🎉' : `R$ ${freteVal.toFixed(2).replace('.', ',')}`}
           </strong>
+        </div>
+        <div className="checkout-success__row">
+          <span>Previsão de entrega</span>
+          <strong>⏱ {shipping?.days ?? '3 a 7 dias úteis'}</strong>
         </div>
         <div className="checkout-success__row">
           <span>Pagamento</span>
@@ -488,10 +625,6 @@ function StepConfirmacao({ entrega, pagamento, items, subtotal, frete, orderNum 
           <strong className="checkout-success__total">
             R$ {(pagamento.metodo === 'pix' ? finalTotal * 0.95 : finalTotal).toFixed(2).replace('.', ',')}
           </strong>
-        </div>
-        <div className="checkout-success__row">
-          <span>Previsão de entrega</span>
-          <strong>3 a 7 dias úteis</strong>
         </div>
       </div>
 
@@ -513,9 +646,9 @@ function StepConfirmacao({ entrega, pagamento, items, subtotal, frete, orderNum 
 export default function Checkout() {
   const { items, total, setOpen, clearCart } = useCart()
   const navigate  = useNavigate()
-  const [step, setStep]       = useState(0)
+  const [step,     setStep]     = useState(0)
   const [orderNum, setOrderNum] = useState('')
-  const [saving, setSaving]   = useState(false)
+  const [saving,   setSaving]   = useState(false)
 
   const [entrega, setEntrega] = useState({
     nome: '', cpf: '', email: '', telefone: '',
@@ -525,18 +658,54 @@ export default function Checkout() {
   const [pagamento, setPagamento] = useState({
     metodo: '', cardNum: '', cardName: '', cardExp: '', cardCvv: '', parcelas: '1',
   })
+  const [selectedShipping, setSelectedShipping] = useState(null)
+  const [freteOpts,   setFreteOpts]   = useState([])
+  const [freteLoading, setFreteLoading] = useState(false)
 
-  const frete = calcFrete(entrega.estado, total)
+  const freteVal = selectedShipping?.price ?? 0
 
   function handleEntregaChange(field, val) {
     setEntrega(p => ({ ...p, [field]: val }))
   }
   function handleEntregaBulk(fields) {
     setEntrega(p => ({ ...p, ...fields }))
+    // Trigger frete fetch when CEP resolves via ViaCEP bulk update
+    if (fields.estado && fields.cep) {
+      fetchFrete(fields.cep, fields.estado)
+    }
+  }
+
+  async function fetchFrete(cep, estado) {
+    const cepDigits = String(cep).replace(/\D/g, '')
+    if (cepDigits.length !== 8 || !estado) return
+    setFreteLoading(true)
+    setSelectedShipping(null)
+    try {
+      const res  = await fetch('/api/shipping', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cep_destino: cepDigits,
+          subtotal:    total,
+          item_count:  items.reduce((s, i) => s + i.qty, 0),
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && Array.isArray(data) && data.length > 0) {
+        setFreteOpts(normalizeME(data, total))
+      } else {
+        // API respondeu mas sem opções válidas → fallback estático
+        setFreteOpts(staticFreteOptions(estado, total))
+      }
+    } catch {
+      setFreteOpts(staticFreteOptions(estado, total))
+    } finally {
+      setFreteLoading(false)
+    }
   }
 
   async function confirmOrder() {
-    const finalTotal = total + (frete ?? 0)
+    const finalTotal = total + freteVal
     const num = String(Math.floor(Math.random() * 900000) + 100000)
     setOrderNum(num)
     setSaving(true)
@@ -557,7 +726,7 @@ export default function Checkout() {
         payment_method:        pagamento.metodo,
         payment_installments:  Number(pagamento.parcelas) || 1,
         subtotal:              total,
-        shipping:              frete ?? 0,
+        shipping:              freteVal,
         total:                 pagamento.metodo === 'pix' ? finalTotal * 0.95 : finalTotal,
         items:                 items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
       })
@@ -604,6 +773,11 @@ export default function Checkout() {
               onBulkChange={handleEntregaBulk}
               onNext={() => setStep(1)}
               subtotal={total}
+              itemCount={items.reduce((s, i) => s + i.qty, 0)}
+              selectedShipping={selectedShipping}
+              onSelectShipping={setSelectedShipping}
+              freteOpts={freteOpts}
+              freteLoading={freteLoading}
             />
           )}
           {step === 1 && (
@@ -613,7 +787,7 @@ export default function Checkout() {
               onNext={confirmOrder}
               onBack={() => setStep(0)}
               subtotal={total}
-              frete={frete ?? 0}
+              frete={freteVal}
             />
           )}
           {step === 2 && (
@@ -622,7 +796,7 @@ export default function Checkout() {
               pagamento={pagamento}
               items={items}
               subtotal={total}
-              frete={frete ?? 0}
+              shipping={selectedShipping}
               orderNum={orderNum}
             />
           )}
@@ -630,7 +804,11 @@ export default function Checkout() {
 
         {step < 2 && (
           <div className="checkout-aside">
-            <OrderSummary items={items} subtotal={total} estado={entrega.estado} />
+            <OrderSummary
+              items={items}
+              subtotal={total}
+              selectedShipping={selectedShipping}
+            />
           </div>
         )}
       </div>
