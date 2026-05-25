@@ -103,11 +103,27 @@ const catIcons = [
   { id:'todos',     label:'Ver tudo',  Icon:IconShopBag,  bg:'#eef2ff', border:'#c7d2fe' },
 ]
 
+// Remove duplicatas pelo nome (mesmo nome = mesmo produto)
+function dedupe(arr) {
+  const seen = new Set()
+  return arr.filter(p => {
+    const key = p.name.toLowerCase().trim()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+// Ordena por mais vendidos primeiro
+function bySold(arr) {
+  return [...arr].sort((a, b) => (b.sold || 0) - (a.sold || 0))
+}
+
 export default function Home() {
   const { products } = useProducts()
-  const joias     = products.filter(p => p.category !== 'camisetas').slice(0, 4)
-  const camisetas = products.filter(p => p.category === 'camisetas')
-  const recomendados = products.slice(0)
+  const joias     = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 4)
+  const camisetas = dedupe(bySold(products.filter(p => p.category === 'camisetas'))).slice(0, 4)
+  const recomendados = dedupe(bySold(products))
 
   return (
     <main className="home">

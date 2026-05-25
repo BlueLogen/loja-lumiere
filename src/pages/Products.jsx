@@ -23,10 +23,23 @@ export default function Products() {
     setSearchParams(params)
   }
 
+  // Filtra por categoria e busca
   let filtered = activeCategory === 'todos' ? products : products.filter(p => p.category === activeCategory)
   if (query) filtered = filtered.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
-  if (sort === 'price-asc') filtered = [...filtered].sort((a, b) => a.price - b.price)
-  if (sort === 'price-desc') filtered = [...filtered].sort((a, b) => b.price - a.price)
+
+  // Remove duplicatas pelo nome
+  const seen = new Set()
+  filtered = filtered.filter(p => {
+    const key = p.name.toLowerCase().trim()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  // Ordenação
+  if (sort === 'default')     filtered = [...filtered].sort((a, b) => (b.sold || 0) - (a.sold || 0))
+  if (sort === 'price-asc')   filtered = [...filtered].sort((a, b) => a.price - b.price)
+  if (sort === 'price-desc')  filtered = [...filtered].sort((a, b) => b.price - a.price)
 
   return (
     <main className="products-page">
@@ -48,7 +61,7 @@ export default function Products() {
       <div className="products-toolbar-mobile">
         <span className="products-count">{filtered.length} peças</span>
         <select value={sort} onChange={e => setSort(e.target.value)} className="sort-select">
-          <option value="default">Relevância</option>
+          <option value="default">Mais vendidos</option>
           <option value="price-asc">Menor preço</option>
           <option value="price-desc">Maior preço</option>
         </select>
