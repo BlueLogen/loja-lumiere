@@ -183,10 +183,9 @@ export default function Home() {
       {/* Garantias strip */}
       <div className="perks-strip">
         {[
-          { icon: '🚚', title: 'Frete Grátis',       sub: 'em compras acima de R$ 299', bg: '#fef9c3', cls: 'perk--truck'   },
-          { icon: '🛡️', title: 'Garantia de 1 Ano',  sub: 'em todas as peças',          bg: '#fee2e2', cls: 'perk--shield'  },
-          { icon: '🔄', title: 'Troca Sem Custo',    sub: 'até 30 dias após a compra',  bg: '#dbeafe', cls: 'perk--spin'    },
-          { icon: '💎', title: 'Peças Certificadas', sub: 'materiais 100% autênticos',  bg: '#f5f3ff', cls: 'perk--diamond' },
+          { icon: '🎧', title: 'Atendimento de Qualidade', sub: 'suporte rápido para você',          bg: '#fee2e2', cls: 'perk--shield'  },
+          { icon: '🚚', title: 'Envio Rápido e Seguro',   sub: 'entregamos para todo Brasil',       bg: '#dbeafe', cls: 'perk--truck'   },
+          { icon: '🔒', title: 'Loja 100% Confiável',     sub: 'compra segura do início ao fim',    bg: '#f5f3ff', cls: 'perk--diamond' },
         ].map(p => (
           <div key={p.title} className="perks-strip__item">
             <div className="perks-strip__bubble" style={{ background: p.bg }}>
