@@ -25,12 +25,16 @@ export default function ProductDetail() {
   const related = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4)
   const sold = product.sold || 1200
 
+  // Preço final = base + acréscimo do tamanho selecionado
+  const sizeExtra = selectedSize && product.sizePrices?.[selectedSize] ? product.sizePrices[selectedSize] : 0
+  const finalPrice = product.price + sizeExtra
+
   function handleAdd() {
-    if (product.sizes && !selectedSize) {
+    if (product.sizes?.length && !selectedSize) {
       alert('Selecione um tamanho')
       return
     }
-    addItem({ ...product, selectedSize })
+    addItem({ ...product, selectedSize, price: finalPrice })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -73,7 +77,10 @@ export default function ProductDetail() {
         <h1 className="detail-info__name">{product.name}</h1>
 
         <div className="detail-info__price-row">
-          <span className="detail-info__price">R$ {product.price.toFixed(2).replace('.', ',')}</span>
+          <span className="detail-info__price">
+            R$ {finalPrice.toFixed(2).replace('.', ',')}
+            {sizeExtra > 0 && <small className="detail-size-extra"> (+R$ {sizeExtra.toFixed(2).replace('.', ',')} tam.)</small>}
+          </span>
           {product.originalPrice && (
             <span className="product-card__original">
               R$ {product.originalPrice.toFixed(2).replace('.', ',')}
@@ -81,7 +88,7 @@ export default function ProductDetail() {
           )}
         </div>
         <p className="detail-info__installment">
-          ou 3x de R$ {(product.price / 3).toFixed(2).replace('.', ',')} sem juros
+          ou 3x de R$ {(finalPrice / 3).toFixed(2).replace('.', ',')} sem juros
         </p>
         <p className="detail-info__sold">{sold.toLocaleString()}+ vendidos</p>
 
@@ -92,17 +99,28 @@ export default function ProductDetail() {
 
         <p className="detail-info__desc">{product.description}</p>
 
-        {product.sizes && (
+        {product.sizes?.length > 0 && (
           <div className="size-selector">
-            <p className="size-selector__label">Tamanho: {selectedSize && <strong>{selectedSize}</strong>}</p>
+            <p className="size-selector__label">
+              Tamanho: {selectedSize
+                ? <strong>{selectedSize}{sizeExtra > 0 ? ` (+R$ ${sizeExtra.toFixed(2).replace('.', ',')})` : ''}</strong>
+                : <span className="size-selector__hint">selecione</span>
+              }
+            </p>
             <div className="size-selector__options">
-              {product.sizes.map(s => (
-                <button
-                  key={s}
-                  className={`size-btn${selectedSize === s ? ' active' : ''}`}
-                  onClick={() => setSelectedSize(s)}
-                >{s}</button>
-              ))}
+              {product.sizes.map(s => {
+                const extra = product.sizePrices?.[s] || 0
+                return (
+                  <button
+                    key={s}
+                    className={`size-btn${selectedSize === s ? ' active' : ''}`}
+                    onClick={() => setSelectedSize(s)}
+                  >
+                    <span>{s}</span>
+                    {extra > 0 && <small className="size-btn__extra">+{extra.toFixed(0)}</small>}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
@@ -111,7 +129,7 @@ export default function ProductDetail() {
       {/* Sticky bottom bar */}
       <div className="detail-sticky">
         <div className="detail-sticky__price">
-          <span>R$ {product.price.toFixed(2).replace('.', ',')}</span>
+          <span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
           <small>3x sem juros</small>
         </div>
         <button

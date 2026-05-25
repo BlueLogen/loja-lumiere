@@ -30,6 +30,7 @@ function fromDB(p) {
     material:      p.material,
     stone:         p.stone,
     sizes:         p.sizes,
+    sizePrices:    p.size_prices || null,
     sold:          p.sold,
   }
 }
@@ -49,6 +50,7 @@ function toDB(p) {
     material:       p.material || null,
     stone:          p.stone || null,
     sizes:          p.sizes?.length ? p.sizes : null,
+    size_prices:    (p.sizePrices && Object.keys(p.sizePrices).length) ? p.sizePrices : null,
     sold:           p.sold ? Number(p.sold) : null,
   }
 }

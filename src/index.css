@@ -893,12 +893,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   flex-wrap: wrap;
   gap: 8px;
 }
+.size-selector__hint { color: #9ca3af; font-size: 11px; }
 .size-btn {
   min-width: 44px;
-  height: 36px;
+  height: 40px;
   padding: 0 10px;
   border: 1.5px solid var(--border);
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
   color: var(--gray);
@@ -906,16 +907,15 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-family: var(--font-sans);
   transition: all 0.15s;
   letter-spacing: 0.5px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px;
+  cursor: pointer;
 }
-.size-btn:hover {
-  border-color: var(--gold);
-  color: var(--black);
-}
-.size-btn.active {
-  border-color: var(--gold);
-  background: var(--gold);
-  color: var(--black);
-}
+.size-btn:hover { border-color: var(--gold); color: var(--black); }
+.size-btn.active { border-color: var(--gold); background: var(--gold); color: var(--black); }
+.size-btn__extra { font-size: 9px; font-weight: 700; color: #2563eb; line-height: 1; }
+.size-btn.active .size-btn__extra { color: #111; }
+.detail-size-extra { font-size: 12px; color: #2563eb; font-weight: 500; margin-left: 6px; }
 
 .detail-sticky {
   position: fixed;
@@ -2389,6 +2389,24 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .drawer-toggle__thumb { position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 2px; left: 2px; transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
 .drawer-toggle input:checked + .drawer-toggle__track .drawer-toggle__thumb { transform: translateX(18px); }
 .drawer-sizes { display: flex; gap: 6px; flex-wrap: wrap; }
-.drawer-size-btn { width: 40px; height: 36px; border-radius: 7px; border: 1.5px solid #e2e8f0; font-size: .82rem; font-weight: 600; color: var(--navy); cursor: pointer; transition: all .18s; }
-.drawer-size-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+.drawer-size-btn { min-width: 40px; height: 36px; padding: 0 8px; border-radius: 7px; border: 1.5px solid #e2e8f0; font-size: .82rem; font-weight: 600; color: #374151; cursor: pointer; transition: all .18s; background: white; }
+.drawer-size-btn:hover { border-color: var(--gold); }
+.drawer-size-btn.active { background: #111; color: white; border-color: #111; }
+
+/* Tamanhos toggle Sim/Não */
+.sizes-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sizes-toggle-label { font-size: .83rem; font-weight: 600; color: #374151; }
+.sizes-yesno { display: flex; border: 1.5px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.sizes-yesno__btn { padding: 7px 20px; font-size: .82rem; font-weight: 600; color: #6b7280; cursor: pointer; background: white; transition: background .15s, color .15s; font-family: var(--font-sans); }
+.sizes-yesno__btn:first-child { border-right: 1px solid #e2e8f0; }
+.sizes-yesno__btn.active { background: #111; color: white; }
+
+/* Preço por tamanho */
+.size-prices-grid { display: flex; flex-direction: column; gap: 8px; }
+.size-price-row { display: flex; align-items: center; gap: 10px; }
+.size-price-row__label { width: 32px; font-size: .82rem; font-weight: 700; color: #111; text-align: center; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 4px 0; flex-shrink: 0; }
+.size-price-row__input { display: flex; align-items: center; gap: 5px; border: 1.5px solid #e2e8f0; border-radius: 7px; padding: 5px 10px; background: white; flex: 1; }
+.size-price-row__input span { font-size: .78rem; color: #9ca3af; white-space: nowrap; }
+.size-price-row__input input { border: none; outline: none; font-size: .85rem; font-family: var(--font-sans); color: #111; width: 80px; }
+.size-price-row__total { font-size: .78rem; color: #2563eb; font-weight: 600; white-space: nowrap; }
 .dash-side-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 199; }

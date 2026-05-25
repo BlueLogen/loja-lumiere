@@ -10,7 +10,7 @@ const EMPTY = {
   name:'', category:'colares', price:'', originalPrice:'',
   image:'', images:['',''], description:'', badge:'',
   badgeColor:'#c9a84c', featured:false, material:'',
-  stone:'', sizes:[], sold:'',
+  stone:'', hasSizes:false, sizes:[], sizePrices:{}, sold:'',
 }
 const BADGE_PRESETS = [
   { label:'Promoção',       color:'#c9a84c' },
@@ -450,6 +450,12 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
     e.preventDefault()
     setSaving(true)
     setSaveErr('')
+    const sizes = form.hasSizes ? form.sizes : []
+    // limpa preços de tamanhos que foram desmarcados
+    const sizePrices = {}
+    if (form.hasSizes) {
+      sizes.forEach(s => { sizePrices[s] = Number(form.sizePrices?.[s] || 0) })
+    }
     const data = {
       ...form,
       price: Number(form.price),
@@ -457,7 +463,8 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
       sold: form.sold ? Number(form.sold) : null,
       images: form.images.filter(Boolean),
       badge: form.badge || null,
-      sizes: form.sizes.length ? form.sizes : null,
+      sizes: sizes.length ? sizes : null,
+      sizePrices: Object.keys(sizePrices).length ? sizePrices : null,
     }
     if (!data.images.length) data.images = [data.image]
     try {
@@ -471,7 +478,6 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
     }
   }
 
-  const isCamiseta = form.category === 'camisetas'
   const disc = form.originalPrice && form.price
     ? Math.round((1 - Number(form.price)/Number(form.originalPrice))*100)
     : null
@@ -613,23 +619,81 @@ function ProductDrawer({ editing, initial, categories, onSave, onClose }) {
                   onChange={e => set('material', e.target.value)} />
               </div>
               <div className="drawer-field">
-                <label>{isCamiseta ? 'Estampa' : 'Pedra'}</label>
-                <input placeholder={isCamiseta ? 'Ex: Serigrafia' : 'Ex: Zircônia'}
+                <label>Pedra / Estampa</label>
+                <input placeholder="Ex: Zircônia ou Serigrafia"
                   value={form.stone} onChange={e => set('stone', e.target.value)} />
               </div>
             </div>
-            {isCamiseta && (
-              <div className="drawer-field">
-                <label>Tamanhos disponíveis</label>
-                <div className="drawer-sizes">
-                  {ALL_SIZES.map(s => (
-                    <button key={s} type="button"
-                      className={`drawer-size-btn${form.sizes.includes(s) ? ' active' : ''}`}
-                      onClick={() => toggleSize(s)}>{s}
-                    </button>
-                  ))}
-                </div>
+          </div>
+
+          {/* Tamanhos */}
+          <div className="drawer-section">
+            <div className="drawer-section__title">📐 Tamanhos</div>
+
+            {/* Toggle Sim/Não */}
+            <div className="sizes-toggle-row">
+              <span className="sizes-toggle-label">Produto tem variações de tamanho?</span>
+              <div className="sizes-yesno">
+                <button type="button"
+                  className={`sizes-yesno__btn${form.hasSizes ? ' active' : ''}`}
+                  onClick={() => set('hasSizes', true)}>Sim</button>
+                <button type="button"
+                  className={`sizes-yesno__btn${!form.hasSizes ? ' active' : ''}`}
+                  onClick={() => { set('hasSizes', false); set('sizes', []); set('sizePrices', {}) }}>Não</button>
               </div>
+            </div>
+
+            {form.hasSizes && (
+              <>
+                {/* Seletor de tamanhos */}
+                <div className="drawer-field">
+                  <label>Selecione os tamanhos disponíveis</label>
+                  <div className="drawer-sizes">
+                    {ALL_SIZES.map(s => (
+                      <button key={s} type="button"
+                        className={`drawer-size-btn${form.sizes.includes(s) ? ' active' : ''}`}
+                        onClick={() => toggleSize(s)}>{s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Diferença de preço por tamanho */}
+                {form.sizes.length > 0 && (
+                  <div className="drawer-field">
+                    <label>
+                      Diferença de preço por tamanho
+                      <span className="drawer-hint"> (0 = mesmo preço base)</span>
+                    </label>
+                    <div className="size-prices-grid">
+                      {form.sizes.map(s => (
+                        <div key={s} className="size-price-row">
+                          <span className="size-price-row__label">{s}</span>
+                          <div className="size-price-row__input">
+                            <span>+R$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0,00"
+                              value={form.sizePrices?.[s] ?? ''}
+                              onChange={e => set('sizePrices', {
+                                ...form.sizePrices,
+                                [s]: e.target.value === '' ? 0 : Number(e.target.value)
+                              })}
+                            />
+                          </div>
+                          {form.price && (
+                            <span className="size-price-row__total">
+                              = R$ {(Number(form.price) + Number(form.sizePrices?.[s] || 0)).toFixed(2).replace('.', ',')}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -673,7 +737,9 @@ export default function Dash() {
         originalPrice: p.originalPrice ? String(p.originalPrice) : '',
         sold: p.sold ? String(p.sold) : '',
         images: p.images?.length >= 2 ? p.images : [...(p.images||[p.image]),''],
+        hasSizes: !!(p.sizes?.length),
         sizes: p.sizes || [],
+        sizePrices: p.sizePrices || {},
       }
     })
   }
