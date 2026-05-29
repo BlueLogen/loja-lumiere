@@ -1482,8 +1482,12 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .perks-strip__item { padding: 16px 20px; }
   .perks-strip__title { font-size: 12px; }
 
-  /* Footer centralizado */
-  .footer--minimal { max-width: 1280px; margin: 0 auto; }
+  /* Footer: ponta a ponta */
+  .footer--minimal {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+  }
 
   /* ── Página de produto — layout 2 colunas ── */
   .detail-page {
