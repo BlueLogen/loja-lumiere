@@ -1424,19 +1424,38 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     align-items: start;
   }
 
-  /* Galeria: coluna esquerda, sticky */
+  /* Galeria: coluna esquerda */
   .detail-gallery {
     grid-column: 1;
     grid-row: 1;
     border-radius: 12px;
-    overflow: hidden;
-    position: sticky;
-    top: calc(var(--header-h) + 20px);
     background: var(--surface);
+    align-self: start;
   }
-  .detail-gallery__main { border-radius: 12px 12px 0 0; }
-  .detail-gallery__thumbs { padding: 10px 16px 16px; gap: 10px; }
-  .detail-thumb { width: 70px; height: 70px; }
+  .detail-gallery__main {
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    aspect-ratio: 1;
+    height: auto;
+  }
+  .detail-gallery__main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .detail-gallery__thumbs {
+    padding: 10px 16px 16px;
+    gap: 10px;
+    overflow-x: auto;
+  }
+  .detail-thumb {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
 
   /* Info: coluna direita */
   .detail-info {

@@ -141,7 +141,6 @@ export default function ProductDetail() {
         <div className="detail-info__perks">
           <span>🚚 Frete grátis acima de R$&nbsp;299</span>
           <span>🔒 Compra 100% segura</span>
-          <span>↩️ Troca fácil em 30 dias</span>
         </div>
       </div>
 
