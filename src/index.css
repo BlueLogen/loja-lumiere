@@ -1412,6 +1412,79 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   .products__grid { grid-template-columns: repeat(4, 1fr); }
   .footer__inner { grid-template-columns: 2fr 1fr 1fr; }
 
+  /* Body: remove padding do bottom-nav (não existe em desktop) */
+  body {
+    padding-bottom: 0;
+  }
+  .bottom-nav { display: none; }
+
+  /* ── HOME — container centralizado ── */
+  .home {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Banner arredondado */
+  .banner-slider {
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 8px 0 0;
+    aspect-ratio: 16/5;
+  }
+
+  /* Categorias — sem scroll horizontal, centralizado */
+  .cat-icons {
+    border-radius: 12px;
+    overflow-x: visible;
+    justify-content: space-evenly;
+    padding: 14px 8px;
+    margin-top: 0;
+  }
+  .cat-icon { flex: 1; max-width: 110px; }
+  .cat-icon__circle { width: 64px; height: 64px; }
+  .cat-icon__circle svg { width: 38px; height: 38px; }
+
+  /* Flash sale */
+  .flash-sale {
+    border-radius: 12px;
+    margin-top: 0;
+  }
+  .flash-sale__scroll { gap: 14px; padding: 14px 16px; }
+  .flash-item { width: 148px; }
+
+  /* Seções (destaque / recomendado) */
+  .home-section {
+    border-radius: 12px;
+    margin-top: 0;
+  }
+  .home-section__header { padding: 14px 16px 10px; }
+
+  /* Promo banners mais altos */
+  .promo-banners {
+    border-radius: 12px;
+    margin-top: 0;
+    padding: 0;
+    gap: 12px;
+  }
+  .promo-banner        { height: 200px; border-radius: 12px; }
+  .promo-banner__title { font-size: 26px; }
+  .promo-banner__btn   { font-size: 12px; padding: 6px 16px; }
+
+  /* Perks strip */
+  .perks-strip {
+    border-radius: 12px;
+    margin-top: 0;
+  }
+  .perks-strip__item { padding: 16px 20px; }
+  .perks-strip__title { font-size: 12px; }
+
+  /* Footer centralizado */
+  .footer--minimal { max-width: 1280px; margin: 0 auto; }
+
   /* ── Página de produto — layout 2 colunas ── */
   .detail-page {
     max-width: 1100px;
