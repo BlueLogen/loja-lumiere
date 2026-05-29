@@ -16,32 +16,49 @@ export default function Header() {
   return (
     <>
       <header className="header">
+        {/* Linha principal: logo + busca + carrinho */}
         <div className="header__top">
-          <Link to="/" className="header__logo">
-            <img src="/logo.png" alt="Basic & Bijus" className="header__logo-img" />
-          </Link>
+          <div className="header__inner">
+            <Link to="/" className="header__logo">
+              <img src="/logo.png" alt="Basic & Bijus" className="header__logo-img" />
+            </Link>
 
-          <form className="header__search" onSubmit={handleSearch}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar joias..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-          </form>
+            <form className="header__search" onSubmit={handleSearch}>
+              <input
+                type="text"
+                placeholder="Buscar joias, pulseiras, colares..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+              />
+              <button type="submit" className="header__search-btn" aria-label="Buscar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+              </button>
+            </form>
 
-          <button className="header__cart-btn" onClick={() => setOpen(true)} aria-label="Carrinho">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <path d="M16 10a4 4 0 01-8 0"/>
-            </svg>
-            {count > 0 && <span className="header__badge">{count}</span>}
-          </button>
+            <button className="header__cart-btn" onClick={() => setOpen(true)} aria-label="Carrinho">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+              </svg>
+              {count > 0 && <span className="header__badge">{count}</span>}
+            </button>
+          </div>
         </div>
+
+        {/* Linha de categorias rápidas — só desktop */}
+        <nav className="header__quick">
+          <div className="header__quick-inner">
+            <Link to="/produtos?cat=pulseiras" className="header__quick-link">Pulseiras</Link>
+            <Link to="/produtos?cat=colares"   className="header__quick-link">Colares</Link>
+            <Link to="/produtos?cat=brincos"   className="header__quick-link">Brincos</Link>
+            <Link to="/produtos?cat=aneis"     className="header__quick-link">Anéis</Link>
+            <Link to="/produtos?cat=outros"    className="header__quick-link">Outros</Link>
+            <Link to="/produtos"               className="header__quick-link">Ver tudo →</Link>
+          </div>
+        </nav>
       </header>
 
       {/* Bottom Nav */}
