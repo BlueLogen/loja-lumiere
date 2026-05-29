@@ -22,7 +22,15 @@ export default function FlashSale() {
   }, [])
 
   const { products } = useProducts()
-  const flash = products.filter(p => p.originalPrice).slice(0, 4)
+  // Pega produtos com desconto, ordena pelo maior % de desconto primeiro
+  const flash = [...products]
+    .filter(p => p.originalPrice && p.originalPrice > p.price)
+    .sort((a, b) => {
+      const dA = (a.originalPrice - a.price) / a.originalPrice
+      const dB = (b.originalPrice - b.price) / b.originalPrice
+      return dB - dA
+    })
+    .slice(0, 8)
 
   return (
     <section className="flash-sale">
@@ -45,7 +53,7 @@ export default function FlashSale() {
         {flash.map(p => (
           <Link key={p.id} to={`/produto/${p.id}`} className="flash-item">
             <div className="flash-item__img">
-              <img src={p.image} alt={p.name} />
+              <img src={p.images?.[0] || p.image} alt={p.name} />
               <span className="flash-item__off">
                 -{Math.round((1 - p.price / p.originalPrice) * 100)}%
               </span>
