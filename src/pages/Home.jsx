@@ -158,7 +158,7 @@ export default function Home() {
       <section className="promo-banners">
         <Link to="/produtos?cat=pulseiras" className="promo-banner">
           <img
-            src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&q=80"
+            src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&q=90"
             alt="Pulseiras"
           />
           <div className="promo-banner__overlay" />
@@ -168,15 +168,15 @@ export default function Home() {
             <span className="promo-banner__btn">Ver coleção →</span>
           </div>
         </Link>
-        <Link to="/produtos?cat=colares" className="promo-banner">
+        <Link to="/produtos?cat=brincos" className="promo-banner">
           <img
-            src="https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=800&q=80"
-            alt="Colares"
+            src="https://images.unsplash.com/photo-1630019852942-f89202989a59?w=900&q=90"
+            alt="Brincos"
           />
           <div className="promo-banner__overlay" />
           <div className="promo-banner__content">
             <span className="promo-banner__tag">Destaque</span>
-            <h3 className="promo-banner__title">Colares</h3>
+            <h3 className="promo-banner__title">Brincos</h3>
             <span className="promo-banner__btn">Ver coleção →</span>
           </div>
         </Link>
