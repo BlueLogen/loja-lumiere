@@ -16,17 +16,13 @@ const FIXED_SLIDES = [
   },
 ]
 
-// Pega até 4 produtos com mais vendas (featured primeiro, depois por sold)
-// Exclui camisetas — o hero é focado em joias
+// Pega até 4 produtos marcados como featured (excluindo camisetas)
+// Para controlar o hero, ative/desative "featured" no painel admin
 function pickHeroProducts(products) {
   if (!products?.length) return []
   const sorted = [...products]
-    .filter(p => p.category !== 'camisetas')
-    .sort((a, b) => {
-      if (a.featured && !b.featured) return -1
-      if (!a.featured && b.featured) return 1
-      return (b.sold || 0) - (a.sold || 0)
-    })
+    .filter(p => p.featured && p.category !== 'camisetas')
+    .sort((a, b) => (b.sold || 0) - (a.sold || 0))
   // Remove duplicatas por nome
   const seen = new Set()
   return sorted
