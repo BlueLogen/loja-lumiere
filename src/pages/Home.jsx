@@ -121,9 +121,9 @@ function bySold(arr) {
 
 export default function Home() {
   const { products } = useProducts()
-  const joias     = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 4)
-  const camisetas = dedupe(bySold(products.filter(p => p.category === 'camisetas'))).slice(0, 4)
-  const recomendados = dedupe(bySold(products))
+  const joias        = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 6)
+  const camisetas    = dedupe(bySold(products.filter(p => p.category === 'camisetas'))).slice(0, 6)
+  const recomendados = dedupe(bySold(products)).slice(0, 6)
 
   return (
     <main className="home">
@@ -176,7 +176,7 @@ export default function Home() {
           <Link to="/produtos?cat=camisetas" className="home-section__more">Ver mais &rsaquo;</Link>
         </div>
         <div className="products__grid">
-          {camisetas.slice(0, 4).map(p => <ProductCard key={p.id} product={p} />)}
+          {camisetas.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
       </section>
 
