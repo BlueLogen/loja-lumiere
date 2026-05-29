@@ -118,11 +118,20 @@ function bySold(arr) {
   return [...arr].sort((a, b) => (b.sold || 0) - (a.sold || 0))
 }
 
+// Pega a melhor imagem de um produto de determinada categoria
+function catImg(products, cat) {
+  const p = products.find(x => x.category === cat && (x.images?.[0] || x.image))
+  return p ? (p.images?.[0] || p.image) : null
+}
+
 export default function Home() {
   const { products } = useProducts()
   const allJoias     = dedupe(bySold(products.filter(p => p.category !== 'camisetas')))
   const joias        = allJoias.slice(0, 8)
   const recomendados = allJoias.slice(8, 16)
+
+  const imgPulseiras = catImg(products, 'pulseiras')
+  const imgBrincos   = catImg(products, 'brincos')
 
   return (
     <main className="home">
@@ -158,7 +167,7 @@ export default function Home() {
       <section className="promo-banners">
         <Link to="/produtos?cat=pulseiras" className="promo-banner">
           <img
-            src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&q=90"
+            src={imgPulseiras || 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=900&q=90'}
             alt="Pulseiras"
           />
           <div className="promo-banner__overlay" />
@@ -170,7 +179,7 @@ export default function Home() {
         </Link>
         <Link to="/produtos?cat=brincos" className="promo-banner">
           <img
-            src="https://images.unsplash.com/photo-1630019852942-f89202989a59?w=900&q=90"
+            src={imgBrincos || 'https://images.unsplash.com/photo-1630019852942-f89202989a59?w=900&q=90'}
             alt="Brincos"
           />
           <div className="promo-banner__overlay" />
