@@ -16,13 +16,26 @@ const FIXED_SLIDES = [
   },
 ]
 
-// Pega até 4 produtos marcados como featured (excluindo camisetas)
-// Para controlar o hero, ative/desative "featured" no painel admin
+// Palavras que bloqueiam um produto do hero (caixa misteriosa, surpresa, etc.)
+const HERO_BLOCKLIST = ['caixa', 'misteriosa', 'surpresa', 'mystery', 'box']
+function isBlockedFromHero(name = '') {
+  const n = name.toLowerCase()
+  return HERO_BLOCKLIST.some(w => n.includes(w))
+}
+
+// Pega até 5 produtos para o hero (joias, não camisetas, não itens bloqueados)
 function pickHeroProducts(products) {
   if (!products?.length) return []
   const sorted = [...products]
-    .filter(p => p.featured && p.category !== 'camisetas')
-    .sort((a, b) => (b.sold || 0) - (a.sold || 0))
+    .filter(p =>
+      p.category !== 'camisetas' &&
+      !isBlockedFromHero(p.name)
+    )
+    .sort((a, b) => {
+      if (a.featured && !b.featured) return -1
+      if (!a.featured && b.featured) return 1
+      return (b.sold || 0) - (a.sold || 0)
+    })
   // Remove duplicatas por nome
   const seen = new Set()
   return sorted
@@ -32,7 +45,7 @@ function pickHeroProducts(products) {
       seen.add(k)
       return true
     })
-    .slice(0, 4)
+    .slice(0, 5)
 }
 
 function fmt(price) {
