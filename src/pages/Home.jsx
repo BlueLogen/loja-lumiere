@@ -120,8 +120,8 @@ function bySold(arr) {
 
 export default function Home() {
   const { products } = useProducts()
-  const joias        = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 6)
-  const recomendados = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 6)
+  const joias        = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 8)
+  const recomendados = dedupe(bySold(products.filter(p => p.category !== 'camisetas'))).slice(0, 8)
 
   return (
     <main className="home">
