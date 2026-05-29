@@ -1116,6 +1116,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .size-btn__extra { font-size: 9px; font-weight: 700; color: #6b7280; line-height: 1; }
 .size-btn.active .size-btn__extra { color: #111; }
 
+/* Desktop-only elements — hidden on mobile */
+.detail-info__add-btn { display: none; }
+.detail-info__perks   { display: none; }
+
 .detail-sticky {
   position: fixed;
   bottom: var(--bottom-nav-h);
@@ -1136,7 +1140,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .detail-sticky__price span {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--navy);
+  color: var(--text);
 }
 .detail-sticky__price small {
   font-size: 11px;
@@ -1407,6 +1411,85 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (min-width: 900px) {
   .products__grid { grid-template-columns: repeat(4, 1fr); }
   .footer__inner { grid-template-columns: 2fr 1fr 1fr; }
+
+  /* ── Página de produto — layout 2 colunas ── */
+  .detail-page {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 24px 60px;
+    background: transparent;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 40px;
+    align-items: start;
+  }
+
+  /* Galeria: coluna esquerda, sticky */
+  .detail-gallery {
+    grid-column: 1;
+    grid-row: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    position: sticky;
+    top: calc(var(--header-h) + 20px);
+    background: var(--surface);
+  }
+  .detail-gallery__main { border-radius: 12px 12px 0 0; }
+  .detail-gallery__thumbs { padding: 10px 16px 16px; gap: 10px; }
+  .detail-thumb { width: 70px; height: 70px; }
+
+  /* Info: coluna direita */
+  .detail-info {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 0;
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+  }
+  .detail-info__name { font-size: 2rem; }
+  .detail-info__price { font-size: 2.4rem; }
+  .detail-info__installment { font-size: 13px; margin-top: 2px; }
+
+  /* Botão compra desktop */
+  .detail-info__add-btn {
+    display: flex !important;
+    width: 100%;
+    justify-content: center;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 10px;
+    margin-top: 20px;
+  }
+
+  /* Garantias desktop */
+  .detail-info__perks {
+    display: flex !important;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .detail-info__perks span {
+    font-size: 11px;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Esconde sticky bar no desktop */
+  .detail-sticky { display: none !important; }
+
+  /* Relacionados: ocupa ambas as colunas */
+  .detail-page > .home-section {
+    grid-column: 1 / -1;
+    margin-top: 32px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
 }
 
 /* ═══════════════════════════════════════════════

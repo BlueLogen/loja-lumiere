@@ -128,6 +128,21 @@ export default function ProductDetail() {
             </div>
           </div>
         )}
+
+        {/* Botão de compra — visível só no desktop (mobile usa sticky bar) */}
+        <button
+          className={`btn btn--gold detail-info__add-btn${added ? ' btn--added' : ''}`}
+          onClick={handleAdd}
+        >
+          {added ? '✓ Adicionado!' : '🛒 Adicionar ao carrinho'}
+        </button>
+
+        {/* Garantias desktop */}
+        <div className="detail-info__perks">
+          <span>🚚 Frete grátis acima de R$&nbsp;299</span>
+          <span>🔒 Compra 100% segura</span>
+          <span>↩️ Troca fácil em 30 dias</span>
+        </div>
       </div>
 
       {/* Sticky bottom bar */}
