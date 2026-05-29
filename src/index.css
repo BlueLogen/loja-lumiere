@@ -1203,6 +1203,27 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: rgba(255,255,255,0.7);
   margin-top: 8px;
 }
+.footer--minimal .footer__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 16px 20px;
+}
+.footer--minimal .footer__logo-img {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 6px 10px;
+}
+.footer--minimal .footer__tagline {
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+  color: rgba(255,255,255,0.55);
+}
 .footer__inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
