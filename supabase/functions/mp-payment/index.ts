@@ -1,11 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
+// Token de teste — troque pelo de produção quando quiser
 const MP_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')
   ?? 'APP_USR-5920068116698450-053116-2e06bd0832ac719f865c2319df7ee314-3440257066'
-
-// Modo simulação: true = resposta fake para testar o fluxo
-// Troque para false quando tiver o token de produção real
-const MODO_TESTE = true
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -13,78 +10,87 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-function jsonRes(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  })
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
-    const body = await req.json()
-    const pm = body.payment_method_id ?? ''
-    const amount: number = body.transaction_amount ?? 0
-    const fakeId = Math.floor(Math.random() * 9000000000) + 1000000000
+    const { items, payer, shipping, origin } = await req.json()
 
-    // ── MODO SIMULAÇÃO ────────────────────────────────────────
-    if (MODO_TESTE) {
-      if (pm === 'pix') {
-        return jsonRes({
-          id: fakeId,
-          status: 'pending',
-          payment_method_id: 'pix',
-          transaction_amount: amount,
-          point_of_interaction: {
-            transaction_data: {
-              qr_code: '00020126580014br.gov.bcb.pix013611111111-1111-1111-1111-11111111111152040000530398654' + String(amount.toFixed(2)).replace('.','') + '5802BR5925BASIC E BIJUS ACESSORIOS6009SAO PAULO62140510basicbijus63041D3D',
-              qr_code_base64: '',
-              ticket_url: 'https://www.mercadopago.com.br/sandbox/payments/' + fakeId + '/ticket',
-            },
-          },
-        })
-      }
+    // Monta os itens para o MP
+    const mpItems = items.map((i: {id:number,name:string,qty:number,price:number}) => ({
+      id:          String(i.id),
+      title:       i.name,
+      quantity:    i.qty,
+      unit_price:  Number(i.price),
+      currency_id: 'BRL',
+    }))
 
-      if (pm === 'bolbradesco' || pm === 'boleto') {
-        return jsonRes({
-          id: fakeId,
-          status: 'pending',
-          payment_method_id: pm,
-          transaction_amount: amount,
-          transaction_details: {
-            external_resource_url: 'https://www.mercadopago.com.br/sandbox/payments/' + fakeId + '/ticket',
-          },
-        })
-      }
-
-      // Cartão: aprovado
-      return jsonRes({
-        id: fakeId,
-        status: 'approved',
-        status_detail: 'accredited',
-        payment_method_id: body.payment_method_id ?? 'visa',
-        installments: body.installments ?? 1,
-        transaction_amount: amount,
+    // Adiciona frete como item se houver
+    if (shipping && shipping.price > 0) {
+      mpItems.push({
+        id:          'frete',
+        title:       `Frete — ${shipping.name}`,
+        quantity:    1,
+        unit_price:  Number(shipping.price),
+        currency_id: 'BRL',
       })
     }
 
-    // ── MODO PRODUÇÃO (MODO_TESTE = false) ────────────────────
-    const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
+    const siteOrigin = origin ?? 'https://basicbijus.com.br'
+
+    const preference = {
+      items: mpItems,
+      payer: {
+        name:  payer.name  ?? '',
+        email: payer.email ?? '',
+        identification: {
+          type:   'CPF',
+          number: payer.cpf ?? '',
+        },
+      },
+      back_urls: {
+        success: `${siteOrigin}/pedido?status=aprovado`,
+        failure: `${siteOrigin}/pedido?status=recusado`,
+        pending: `${siteOrigin}/pedido?status=pendente`,
+      },
+      auto_return: 'approved',
+      payment_methods: {
+        installments: 3,
+      },
+      statement_descriptor: 'BASIC E BIJUS',
+    }
+
+    const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${MP_TOKEN}`,
+        Authorization:  `Bearer ${MP_TOKEN}`,
         'Content-Type': 'application/json',
-        'X-Idempotency-Key': `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(preference),
     })
 
     const data = await mpRes.json()
-    return jsonRes(data, mpRes.status)
+
+    if (!mpRes.ok) {
+      return new Response(JSON.stringify({ error: data.message ?? data.error ?? 'Erro MP' }), {
+        status: mpRes.status,
+        headers: { ...CORS, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // sandbox_init_point = ambiente de teste / init_point = produção real
+    return new Response(JSON.stringify({
+      preference_id: data.id,
+      checkout_url:  data.sandbox_init_point ?? data.init_point,
+    }), {
+      status: 200,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
 
   } catch (err) {
-    return jsonRes({ error: String(err) }, 500)
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...CORS, 'Content-Type': 'application/json' },
+    })
   }
 })

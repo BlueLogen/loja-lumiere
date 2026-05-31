@@ -12,6 +12,7 @@ import About from './pages/About'
 import Admin from './pages/Admin'
 import AdminLogin from './pages/AdminLogin'
 import Checkout from './pages/Checkout'
+import PedidoStatus from './pages/PedidoStatus'
 import Dash from './pages/Dash'
 
 function ScrollToTop() {
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/produto/:id" element={<StoreLayout><ProductDetail /></StoreLayout>} />
           <Route path="/sobre" element={<StoreLayout><About /></StoreLayout>} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/pedido"   element={<StoreLayout><PedidoStatus /></StoreLayout>} />
         </Routes>
       </CartProvider>
     </ProductsProvider>

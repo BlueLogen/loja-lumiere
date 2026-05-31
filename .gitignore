@@ -4,3 +4,7 @@ dist
 *.local
 .env
 .claude/settings.local.json
+
+.vercel
+.claude/settings.local.json
+supabase/.temp/
