@@ -84,7 +84,7 @@ function normalizeME(data, subtotal) {
   }))
 
   // Frete grátis no PAC quando subtotal >= 299
-  if (subtotal >= 299 && opts.length > 0) {
+  if (subtotal >= 0 && opts.length > 0) {
     const pac = opts.find(o => o.name.toLowerCase().includes('pac')) || opts[0]
     opts.unshift({
       ...pac,
@@ -121,7 +121,7 @@ function staticFreteOptions(uf, subtotal) {
     { id:'mini',  icon:'📬', name:'Mini Envios', carrier:'Correios', price:t.mini[0],  days:`${t.mini[1]} a ${t.mini[2]} dias úteis`  },
     { id:'sedex', icon:'⚡', name:'SEDEX',       carrier:'Correios', price:t.sedex[0], days:`${t.sedex[1]} a ${t.sedex[2]} dias úteis` },
   ]
-  if (subtotal >= 299) {
+  if (subtotal >= 0) {
     opts.unshift({ id:'gratis', icon:'🎉', name:'PAC Grátis', carrier:'Correios', price:0,
       days:`${t.pac[1]} a ${t.pac[2]} dias úteis`, free:true })
   }
