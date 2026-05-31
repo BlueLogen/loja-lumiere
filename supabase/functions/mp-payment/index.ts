@@ -79,7 +79,7 @@ serve(async (req) => {
     // sandbox_init_point = ambiente de teste / init_point = produção real
     return new Response(JSON.stringify({
       preference_id: data.id,
-      checkout_url:  data.init_point,
+      checkout_url:  data.sandbox_init_point ?? data.init_point,
     }), {
       status: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
