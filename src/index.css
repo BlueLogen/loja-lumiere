@@ -2500,6 +2500,38 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .pix-code-text { font-size: 11px; color: var(--text-muted); flex: 1; word-break: break-all; }
 .pix-note { font-size: 12px; color: var(--gray); text-align: center; }
 
+/* ── Métodos de pagamento ── */
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  background: var(--surface-2);
+}
+.payment-option input[type="radio"] { display: none; }
+.payment-option.active {
+  border-color: var(--gold);
+  background: rgba(201,168,76,.08);
+}
+.payment-option:hover { border-color: var(--gold-light); }
+.payment-option__icon { font-size: 1.4rem; flex-shrink: 0; }
+.payment-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.payment-option__text strong { font-size: .88rem; color: var(--text); }
+.payment-option__text small  { font-size: .72rem; color: var(--gray); }
+
 /* Empty cart */
 .checkout-empty {
   display: flex;

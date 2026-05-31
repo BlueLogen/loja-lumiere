@@ -562,7 +562,12 @@ function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete
       const result = await res.json()
 
       if (!res.ok) {
-        setError(result.error || `Erro ${res.status} na API de pagamento.`)
+        const msg = result.error || result.message || ''
+        setError(
+          msg === 'unauthorized' || res.status === 401
+            ? '⚠️ Erro de autenticação com o Mercado Pago. Verifique se o MP_ACCESS_TOKEN está configurado corretamente no Vercel.'
+            : msg || `Erro ${res.status} na API de pagamento.`
+        )
         return
       }
 
