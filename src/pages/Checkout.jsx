@@ -2,6 +2,10 @@ import { useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
+import { initMercadoPago, Payment } from '@mercadopago/sdk-react'
+
+// Chave pública — é seguro estar no frontend
+initMercadoPago('APP_USR-40d706cd-153e-4dd8-9953-20a1315ca390', { locale: 'pt-BR' })
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
 
@@ -451,137 +455,234 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
   )
 }
 
-// ── STEP 2: PAGAMENTO ─────────────────────────────────────
-function StepPagamento({ data, onChange, onNext, onBack, subtotal, frete }) {
-  const finalTotal = subtotal + (frete ?? 0)
+// ── STEP 2: PAGAMENTO — Mercado Pago Bricks ───────────────
+function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete }) {
+  const finalTotal             = subtotal + (frete ?? 0)
+  const [mpError, setMpError]       = useState('')
+  const [processing, setProcessing] = useState(false)
+  const [brickReady, setBrickReady] = useState(false)
 
-  function handleSubmit(e) {
-    e.preventDefault()
-    onNext()
+  async function handleSubmit({ formData }) {
+    setProcessing(true)
+    setMpError('')
+
+    try {
+      const res = await fetch('/api/payment', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          transaction_amount: finalTotal,
+          description:        'Pedido Basic & Bijus',
+          payer: {
+            ...(formData.payer || {}),
+            email:      entrega.email,
+            first_name: entrega.nome.split(' ')[0]  || '',
+            last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
+            identification: {
+              type:   'CPF',
+              number: entrega.cpf.replace(/\D/g, ''),
+            },
+          },
+        }),
+      })
+
+      const result = await res.json()
+
+      if (result.status === 'approved') {
+        onApproved(result)
+      } else if (['pending', 'in_process', 'authorized'].includes(result.status)) {
+        onPending(result)
+      } else {
+        const detail = result.status_detail || result.message || ''
+        setMpError(
+          detail === 'cc_rejected_insufficient_amount'
+            ? 'Saldo insuficiente no cartão.'
+            : detail === 'cc_rejected_bad_filled_card_number'
+            ? 'Número do cartão inválido.'
+            : detail === 'cc_rejected_bad_filled_security_code'
+            ? 'CVV inválido.'
+            : detail === 'cc_rejected_bad_filled_date'
+            ? 'Data de validade inválida.'
+            : 'Pagamento recusado. Verifique os dados e tente novamente.'
+        )
+      }
+    } catch (err) {
+      console.error('[MP] Erro:', err)
+      setMpError('Erro ao processar pagamento. Verifique sua conexão e tente novamente.')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   return (
-    <form className="checkout-form" onSubmit={handleSubmit}>
-      <div className="checkout-form__section">
-        <h3>Método de pagamento</h3>
-        <div className="payment-methods">
-          {[
-            { id: 'cartao', icon: '💳', label: 'Cartão de crédito', sub: 'até 3x sem juros' },
-            { id: 'pix',    icon: '⚡', label: 'PIX',               sub: '5% de desconto' },
-            { id: 'boleto', icon: '📄', label: 'Boleto bancário',   sub: 'vence em 3 dias' },
-          ].map(m => (
-            <label key={m.id} className={`payment-option${data.metodo === m.id ? ' active' : ''}`}>
-              <input type="radio" name="metodo" value={m.id}
-                checked={data.metodo === m.id}
-                onChange={() => onChange('metodo', m.id)} />
-              <span className="payment-option__icon">{m.icon}</span>
-              <span className="payment-option__text">
-                <strong>{m.label}</strong>
-                <small>{m.sub}</small>
-              </span>
-            </label>
-          ))}
-        </div>
+    <div className="checkout-form mp-payment-wrap">
+
+      {/* Cabeçalho segurança */}
+      <div className="mp-secure-header">
+        <img
+          src="https://http2.mlstatic.com/frontend-assets/mp-checkout-pay/mp-logo.svg"
+          alt="Mercado Pago"
+          className="mp-logo"
+          onError={e => { e.target.style.display = 'none' }}
+        />
+        <span>🔒 Pagamento 100% seguro · SSL</span>
       </div>
 
-      {data.metodo === 'cartao' && (
-        <div className="checkout-form__section">
-          <h3>Dados do cartão</h3>
-          <div className="checkout-field">
-            <label>Número do cartão *</label>
-            <input required placeholder="0000 0000 0000 0000" maxLength={19}
-              value={data.cardNum || ''}
-              onChange={e => onChange('cardNum', maskCard(e.target.value))} />
-          </div>
-          <div className="checkout-field">
-            <label>Nome no cartão *</label>
-            <input required placeholder="Como está no cartão"
-              value={data.cardName || ''}
-              onChange={e => onChange('cardName', e.target.value.toUpperCase())} />
-          </div>
-          <div className="checkout-field-row">
-            <div className="checkout-field">
-              <label>Validade *</label>
-              <input required placeholder="MM/AA" maxLength={5}
-                value={data.cardExp || ''}
-                onChange={e => onChange('cardExp', maskExp(e.target.value))} />
-            </div>
-            <div className="checkout-field checkout-field--sm">
-              <label>CVV *</label>
-              <input required placeholder="000" maxLength={4}
-                value={data.cardCvv || ''}
-                onChange={e => onChange('cardCvv', e.target.value.replace(/\D/g, ''))} />
-            </div>
-            <div className="checkout-field">
-              <label>Parcelas</label>
-              <select value={data.parcelas || '1'} onChange={e => onChange('parcelas', e.target.value)}>
-                <option value="1">1x de R$ {finalTotal.toFixed(2).replace('.', ',')} (à vista)</option>
-                <option value="2">2x de R$ {(finalTotal / 2).toFixed(2).replace('.', ',')} sem juros</option>
-                <option value="3">3x de R$ {(finalTotal / 3).toFixed(2).replace('.', ',')} sem juros</option>
-              </select>
-            </div>
-          </div>
+      {/* Brick do Mercado Pago */}
+      {!brickReady && (
+        <div className="mp-loading">
+          <span className="cep-spinner" />
+          <span>Carregando opções de pagamento…</span>
         </div>
       )}
 
-      {data.metodo === 'pix' && (
-        <div className="checkout-form__section pix-info">
-          <div className="pix-box">
-            <div className="pix-qr">
-              <div className="pix-qr__mock">
-                <svg viewBox="0 0 100 100" width="120" height="120">
-                  <rect width="100" height="100" fill="white"/>
-                  {[0,20,40,60,80].map(x => [0,20,40,60,80].map(y => (
-                    <rect key={`${x}-${y}`} x={x+2} y={y+2}
-                      width={((x * 3 + y) % 3 === 0) ? 14 : 8}
-                      height={((x + y * 2) % 3 === 0) ? 14 : 8}
-                      fill="#0d2347" rx="1"/>
-                  )))}
-                </svg>
-              </div>
-              <p className="pix-qr__label">QR Code PIX</p>
-            </div>
-            <div className="pix-details">
-              <p><strong>Valor com desconto PIX (5%):</strong></p>
-              <p className="pix-total">R$ {(finalTotal * 0.95).toFixed(2).replace('.', ',')}</p>
-              <p className="pix-key">Chave PIX: <strong>basicebijus@pix.com</strong></p>
-              <p className="pix-note">O pedido é confirmado automaticamente após o pagamento.</p>
-            </div>
-          </div>
+      <Payment
+        initialization={{
+          amount: finalTotal,
+          payer: {
+            firstName:      entrega.nome.split(' ')[0]  || '',
+            lastName:       entrega.nome.split(' ').slice(1).join(' ') || '',
+            email:          entrega.email,
+            identification: { type: 'CPF', value: entrega.cpf.replace(/\D/g, '') },
+          },
+        }}
+        customization={{
+          paymentMethods: {
+            creditCard:  'all',
+            debitCard:   'all',
+            ticket:      'all',      // boleto
+            bankTransfer:'all',      // PIX
+            maxInstallments: 3,
+          },
+          visual: {
+            style:         { theme: 'dark' },
+            hideFormTitle: true,
+          },
+        }}
+        onReady={() => setBrickReady(true)}
+        onSubmit={handleSubmit}
+        onError={err => {
+          console.error('[MP Brick]', err)
+          setMpError('Erro no formulário. Recarregue a página e tente novamente.')
+        }}
+      />
+
+      {mpError && (
+        <p className="field-error mp-field-error">{mpError}</p>
+      )}
+
+      {processing && (
+        <div className="mp-processing">
+          <span className="cep-spinner" />
+          <span>Processando pagamento…</span>
         </div>
       )}
 
-      {data.metodo === 'boleto' && (
-        <div className="checkout-form__section">
-          <div className="boleto-info">
-            <span>📄</span>
-            <p>O boleto será gerado após confirmar o pedido. Vencimento em <strong>3 dias úteis</strong>. Pagamentos após o vencimento não serão processados.</p>
-          </div>
-        </div>
-      )}
-
-      <div className="checkout-nav">
-        <button type="button" className="btn btn--ghost" onClick={onBack}>← Voltar</button>
-        <button type="submit" className="btn btn--gold btn--lg" disabled={!data.metodo}>
-          Confirmar pedido →
+      <div className="checkout-nav" style={{ marginTop: 16 }}>
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={onBack}
+          disabled={processing}
+        >
+          ← Voltar
         </button>
       </div>
-    </form>
+    </div>
   )
 }
 
+// Mapeia IDs do MP para nomes legíveis
+function mpMethodLabel(id = '') {
+  const map = {
+    visa: 'Visa', master: 'Mastercard', elo: 'Elo', hipercard: 'Hipercard',
+    amex: 'American Express', pix: 'PIX', bolbradesco: 'Boleto Bradesco',
+    pec: 'Boleto', paymentez: 'Boleto',
+  }
+  return map[id] || id.toUpperCase()
+}
+
 // ── STEP 3: CONFIRMAÇÃO ───────────────────────────────────
-function StepConfirmacao({ entrega, pagamento, items, subtotal, shipping, orderNum }) {
-  const freteVal    = shipping?.price ?? 0
-  const finalTotal  = subtotal + freteVal
-  const metodoLabel = { cartao: 'Cartão de crédito', pix: 'PIX', boleto: 'Boleto bancário' }
+function StepConfirmacao({ entrega, items, subtotal, shipping, orderNum, mpResult }) {
+  const freteVal   = shipping?.price ?? 0
+  const finalTotal = subtotal + freteVal
+  const isPending  = mpResult?.status === 'pending' || mpResult?.status === 'in_process'
+  const isPix      = mpResult?.payment_method_id === 'pix'
+  const pixData    = mpResult?.point_of_interaction?.transaction_data
+  const boletoUrl  = mpResult?.transaction_details?.external_resource_url
 
   return (
     <div className="checkout-success">
-      <div className="checkout-success__icon">✓</div>
-      <h2>Pedido realizado!</h2>
-      <p>Seu pedido <strong>#{orderNum}</strong> foi confirmado com sucesso.</p>
-      <p>Uma confirmação foi enviada para <strong>{entrega.email}</strong></p>
+      {isPending ? (
+        <>
+          {isPix ? (
+            <>
+              <div className="checkout-success__icon" style={{ background: '#00b1ea' }}>⚡</div>
+              <h2>Quase lá! Pague com PIX</h2>
+              <p>Escaneie o QR code ou copie o código para finalizar o pedido.</p>
+
+              {pixData?.qr_code_base64 && (
+                <div className="pix-qr-real">
+                  <img
+                    src={`data:image/png;base64,${pixData.qr_code_base64}`}
+                    alt="QR Code PIX"
+                  />
+                </div>
+              )}
+
+              {pixData?.qr_code && (
+                <div className="pix-copy-wrap">
+                  <p className="pix-code-label">Código PIX Copia e Cola:</p>
+                  <div className="pix-copy-box">
+                    <code className="pix-code-text">{pixData.qr_code.slice(0, 40)}…</code>
+                    <button
+                      className="btn btn--gold"
+                      style={{ fontSize: 12, padding: '6px 14px' }}
+                      onClick={() => navigator.clipboard.writeText(pixData.qr_code)}
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <p className="pix-note" style={{ marginTop: 12 }}>
+                ⏱ O código expira em <strong>30 minutos</strong>. Após o pagamento, seu pedido é confirmado automaticamente.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="checkout-success__icon" style={{ background: '#6c757d' }}>📄</div>
+              <h2>Boleto gerado!</h2>
+              <p>Pague o boleto para confirmar seu pedido.</p>
+              {boletoUrl && (
+                <a
+                  href={boletoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn--gold btn--full btn--lg"
+                  style={{ marginBottom: 16 }}
+                >
+                  📄 Abrir boleto
+                </a>
+              )}
+              <p style={{ fontSize: 12, color: 'var(--gray)' }}>
+                Vencimento em 3 dias úteis. Não pague após o vencimento.
+              </p>
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="checkout-success__icon">✓</div>
+          <h2>Pedido aprovado!</h2>
+        </>
+      )}
+
+      <p style={{ marginTop: 8 }}>
+        Pedido <strong>#{orderNum}</strong> · confirmação enviada para <strong>{entrega.email}</strong>
+      </p>
 
       <div className="checkout-success__card">
         <div className="checkout-success__row">
@@ -597,33 +698,27 @@ function StepConfirmacao({ entrega, pagamento, items, subtotal, shipping, orderN
           </strong>
         </div>
         <div className="checkout-success__row">
-          <span>Modalidade</span>
-          <strong>
-            {shipping?.icon} {shipping?.name} ({shipping?.carrier})
-          </strong>
-        </div>
-        <div className="checkout-success__row">
           <span>Frete</span>
           <strong className={freteVal === 0 ? 'free-shipping' : ''}>
+            {shipping?.icon} {shipping?.name} ·{' '}
             {freteVal === 0 ? 'Grátis 🎉' : `R$ ${freteVal.toFixed(2).replace('.', ',')}`}
           </strong>
         </div>
         <div className="checkout-success__row">
-          <span>Previsão de entrega</span>
+          <span>Previsão</span>
           <strong>⏱ {shipping?.days ?? '3 a 7 dias úteis'}</strong>
         </div>
         <div className="checkout-success__row">
           <span>Pagamento</span>
           <strong>
-            {metodoLabel[pagamento.metodo] || pagamento.metodo}
-            {pagamento.metodo === 'cartao' && pagamento.parcelas > 1 ? ` · ${pagamento.parcelas}x` : ''}
-            {pagamento.metodo === 'pix' ? ' · 5% OFF' : ''}
+            {mpResult ? mpMethodLabel(mpResult.payment_method_id) : 'Mercado Pago'}
+            {mpResult?.installments > 1 ? ` · ${mpResult.installments}x` : ''}
           </strong>
         </div>
         <div className="checkout-success__row">
           <span>Total</span>
           <strong className="checkout-success__total">
-            R$ {(pagamento.metodo === 'pix' ? finalTotal * 0.95 : finalTotal).toFixed(2).replace('.', ',')}
+            R$ {finalTotal.toFixed(2).replace('.', ',')}
           </strong>
         </div>
       </div>
@@ -649,14 +744,12 @@ export default function Checkout() {
   const [step,     setStep]     = useState(0)
   const [orderNum, setOrderNum] = useState('')
   const [saving,   setSaving]   = useState(false)
+  const [mpResult, setMpResult] = useState(null)   // resultado do pagamento MP
 
   const [entrega, setEntrega] = useState({
     nome: '', cpf: '', email: '', telefone: '',
     cep: '', rua: '', numero: '', complemento: '',
     bairro: '', cidade: '', estado: '',
-  })
-  const [pagamento, setPagamento] = useState({
-    metodo: '', cardNum: '', cardName: '', cardExp: '', cardCvv: '', parcelas: '1',
   })
   const [selectedShipping, setSelectedShipping] = useState(null)
   const [freteOpts,   setFreteOpts]   = useState([])
@@ -704,10 +797,11 @@ export default function Checkout() {
     }
   }
 
-  async function confirmOrder() {
+  async function confirmOrder(mp) {
     const finalTotal = total + freteVal
     const num = String(Math.floor(Math.random() * 900000) + 100000)
     setOrderNum(num)
+    setMpResult(mp)
     setSaving(true)
     try {
       await supabase.from('orders').insert({
@@ -723,11 +817,13 @@ export default function Checkout() {
         address_neighborhood:  entrega.bairro,
         address_city:          entrega.cidade,
         address_state:         entrega.estado,
-        payment_method:        pagamento.metodo,
-        payment_installments:  Number(pagamento.parcelas) || 1,
+        payment_method:        mp?.payment_method_id  || 'mercadopago',
+        payment_installments:  mp?.installments       || 1,
+        payment_mp_id:         mp?.id?.toString()     || null,
+        payment_status:        mp?.status             || 'pending',
         subtotal:              total,
         shipping:              freteVal,
-        total:                 pagamento.metodo === 'pix' ? finalTotal * 0.95 : finalTotal,
+        total:                 finalTotal,
         items:                 items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
       })
     } catch (e) {
@@ -782,9 +878,9 @@ export default function Checkout() {
           )}
           {step === 1 && (
             <StepPagamento
-              data={pagamento}
-              onChange={(field, val) => setPagamento(p => ({ ...p, [field]: val }))}
-              onNext={confirmOrder}
+              entrega={entrega}
+              onApproved={confirmOrder}
+              onPending={confirmOrder}
               onBack={() => setStep(0)}
               subtotal={total}
               frete={freteVal}
@@ -793,11 +889,11 @@ export default function Checkout() {
           {step === 2 && (
             <StepConfirmacao
               entrega={entrega}
-              pagamento={pagamento}
               items={items}
               subtotal={total}
               shipping={selectedShipping}
               orderNum={orderNum}
+              mpResult={mpResult}
             />
           )}
         </div>

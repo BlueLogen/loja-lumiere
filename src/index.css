@@ -2423,58 +2423,64 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* Nav buttons */
 .checkout-nav { display: flex; gap: 10px; justify-content: space-between; margin-top: 4px; }
 
-/* Payment methods */
-.payment-methods { display: flex; flex-direction: column; gap: 10px; }
-.payment-option {
+/* ── Mercado Pago Brick wrapper ── */
+.mp-payment-wrap { padding: 0; }
+.mp-secure-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border: 2px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  cursor: pointer;
-  transition: border-color .2s, background .2s;
+  gap: 10px;
+  padding: 10px 16px 14px;
+  font-size: 12px;
+  color: var(--gray);
 }
-.payment-option input[type="radio"] { display: none; }
-.payment-option.active {
-  border-color: var(--gold);
-  background: #1f1a0e;
-}
-.payment-option__icon { font-size: 1.4rem; }
-.payment-option__text { display: flex; flex-direction: column; gap: 1px; }
-.payment-option__text strong { font-size: .88rem; color: var(--text); }
-.payment-option__text small { font-size: .72rem; color: var(--gray); }
-
-/* PIX */
-.pix-info { }
-.pix-box { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
-.pix-qr { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.pix-qr__mock {
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  padding: 6px;
-  background: var(--surface);
-}
-.pix-qr__label { font-size: .72rem; color: var(--gray); }
-.pix-details { display: flex; flex-direction: column; gap: 5px; flex: 1; }
-.pix-total { font-size: 1.4rem; font-weight: 700; color: var(--text); font-family: var(--font-serif); }
-.pix-key { font-size: .82rem; color: var(--gray); }
-.pix-note { font-size: .75rem; color: var(--gray); }
-
-/* Boleto */
-.boleto-info {
+.mp-logo { height: 20px; width: auto; object-fit: contain; }
+.mp-loading, .mp-processing {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  background: #1f1a0e;
-  border: 1px solid #f0d98b;
-  border-radius: 8px;
-  padding: 12px 14px;
-  font-size: .83rem;
-  color: var(--text);
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 24px;
+  font-size: 13px;
+  color: var(--gray);
 }
-.boleto-info span { font-size: 1.5rem; }
+.mp-field-error {
+  text-align: center;
+  padding: 10px 16px;
+  background: rgba(239,68,68,.1);
+  border-radius: 8px;
+  margin: 8px 16px;
+}
+
+/* PIX confirmação */
+.pix-qr-real {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+.pix-qr-real img {
+  width: 180px;
+  height: 180px;
+  border-radius: 8px;
+  border: 3px solid var(--gold);
+  object-fit: contain;
+  background: #fff;
+  padding: 4px;
+}
+.pix-copy-wrap { text-align: center; margin: 8px 0; }
+.pix-code-label { font-size: 11px; color: var(--gray); margin-bottom: 6px; }
+.pix-copy-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.pix-code-text { font-size: 11px; color: var(--text-muted); flex: 1; word-break: break-all; }
+.pix-note { font-size: 12px; color: var(--gray); text-align: center; }
 
 /* Empty cart */
 .checkout-empty {
