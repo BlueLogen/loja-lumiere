@@ -6,7 +6,7 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
-  const token = process.env.MP_ACCESS_TOKEN
+  const token = process.env.MP_ACCESS_TOKEN || 'APP_USR-5920068116698450-053116-2e06bd0832ac719f865c2319df7ee314-3440257066'
 
   if (!token) {
     return res.status(200).json({

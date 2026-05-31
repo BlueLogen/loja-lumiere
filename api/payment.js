@@ -6,7 +6,8 @@
  * nunca exposto ao browser.
  */
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
+// TODO: após confirmar que funciona, remover a linha abaixo e usar só o env var
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || 'APP_USR-5920068116698450-053116-2e06bd0832ac719f865c2319df7ee314-3440257066'
 
 export default async function handler(req, res) {
   // CORS
