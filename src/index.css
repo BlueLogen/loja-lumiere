@@ -2423,33 +2423,51 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* Nav buttons */
 .checkout-nav { display: flex; gap: 10px; justify-content: space-between; margin-top: 4px; }
 
-/* ── Mercado Pago Brick wrapper ── */
-.mp-payment-wrap { padding: 0; }
-.mp-secure-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px 14px;
-  font-size: 12px;
-  color: var(--gray);
+/* ── Checkout Transparente — campos MP (iframes) ── */
+.mp-iframe-field {
+  min-height: 40px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px 4px;
+  transition: border-color .2s;
 }
-.mp-logo { height: 20px; width: auto; object-fit: contain; }
-.mp-loading, .mp-processing {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-  padding: 24px;
+.mp-iframe-field:focus-within { border-color: var(--gold); }
+.mp-installments-select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
   font-size: 13px;
-  color: var(--gray);
+  font-family: var(--font-sans);
+  outline: none;
 }
+.mp-installments-select:focus { border-color: var(--gold); }
 .mp-field-error {
   text-align: center;
   padding: 10px 16px;
-  background: rgba(239,68,68,.1);
+  background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.3);
   border-radius: 8px;
-  margin: 8px 16px;
+  margin: 8px 0 0;
+  color: #fca5a5;
+  font-size: 13px;
 }
+
+/* Info box PIX / boleto */
+.tp-info-box {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.tp-info-box__icon { font-size: 2rem; line-height: 1; }
+.tp-info-box p    { font-size: 13px; color: var(--text); line-height: 1.5; }
 
 /* PIX confirmação */
 .pix-qr-real {

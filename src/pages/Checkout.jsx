@@ -1,11 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
-import { initMercadoPago, Payment } from '@mercadopago/sdk-react'
 
-// Chave pública — é seguro estar no frontend
-initMercadoPago('APP_USR-40d706cd-153e-4dd8-9953-20a1315ca390', { locale: 'pt-BR' })
+const MP_PUBLIC_KEY = 'APP_USR-40d706cd-153e-4dd8-9953-20a1315ca390'
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
 
@@ -455,137 +453,278 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
   )
 }
 
-// ── STEP 2: PAGAMENTO — Mercado Pago Bricks ───────────────
+// ── Mapeia detalhe de rejeição do MP para mensagem amigável ─
+function mpRejectMsg(detail = '') {
+  const map = {
+    cc_rejected_insufficient_amount: 'Saldo insuficiente no cartão.',
+    cc_rejected_bad_filled_card_number: 'Número do cartão inválido.',
+    cc_rejected_bad_filled_security_code: 'CVV incorreto.',
+    cc_rejected_bad_filled_date: 'Data de validade inválida.',
+    cc_rejected_high_risk: 'Pagamento negado pela operadora. Tente outro cartão.',
+    cc_rejected_blacklist: 'Cartão não autorizado. Tente outro.',
+    cc_rejected_call_for_authorize: 'Ligue para a operadora para autorizar.',
+    cc_rejected_duplicated_payment: 'Pagamento duplicado. Aguarde alguns minutos.',
+  }
+  return map[detail] || 'Pagamento não aprovado. Verifique os dados e tente novamente.'
+}
+
+// ── STEP 2: PAGAMENTO — Checkout Transparente ─────────────
 function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete }) {
-  const finalTotal             = subtotal + (frete ?? 0)
-  const [mpError, setMpError]       = useState('')
-  const [processing, setProcessing] = useState(false)
-  const [brickReady, setBrickReady] = useState(false)
+  const finalTotal = subtotal + (frete ?? 0)
+  const [metodo,     setMetodo]     = useState('')
+  const [loading,    setLoading]    = useState(false)
+  const [error,      setError]      = useState('')
+  const cardFormRef  = useRef(null)
+  const mpRef        = useRef(null)
 
-  async function handleSubmit({ formData }) {
-    setProcessing(true)
-    setMpError('')
+  // Monta o cardForm do MP quando cartão for selecionado
+  useEffect(() => {
+    if (metodo !== 'cartao') {
+      cardFormRef.current?.unmount?.()
+      cardFormRef.current = null
+      return
+    }
 
+    let cancelled = false
+    const mount = () => {
+      if (cancelled || cardFormRef.current) return
+      if (!window.MercadoPago) { setTimeout(mount, 250); return }
+
+      try {
+        mpRef.current = mpRef.current ?? new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' })
+
+        cardFormRef.current = mpRef.current.cardForm({
+          amount: finalTotal.toFixed(2),
+          autoMount: true,
+          form: {
+            id: 'mp-card-form',
+            cardholderName:       { id: 'mp-cardholderName',     placeholder: 'Nome como no cartão' },
+            cardNumber:           { id: 'mp-cardNumber',         placeholder: '0000 0000 0000 0000' },
+            expirationDate:       { id: 'mp-expirationDate',     placeholder: 'MM/AA' },
+            securityCode:         { id: 'mp-securityCode',       placeholder: 'CVV' },
+            installments:         { id: 'mp-installments' },
+            identificationType:   { id: 'mp-identificationType' },
+            identificationNumber: { id: 'mp-identificationNumber', placeholder: '000.000.000-00',
+                                    value: entrega.cpf.replace(/\D/g, '') },
+            issuer:               { id: 'mp-issuer' },
+          },
+          callbacks: {
+            onFormMounted: err => { if (err) console.error('[MP] mount:', err) },
+            onSubmit: async (e) => {
+              e.preventDefault()
+              const d = cardFormRef.current.getCardFormData()
+              if (!d.token) { setError('Verifique os dados do cartão.'); return }
+              await processPayment({
+                token:              d.token,
+                payment_method_id:  d.paymentMethodId,
+                installments:       parseInt(d.installments) || 1,
+                transaction_amount: finalTotal,
+                description:        'Pedido Basic & Bijus',
+                payer: {
+                  email:      entrega.email,
+                  first_name: entrega.nome.split(' ')[0]  || '',
+                  last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
+                  identification: {
+                    type:   d.identificationType  || 'CPF',
+                    number: d.identificationNumber || entrega.cpf.replace(/\D/g, ''),
+                  },
+                },
+              })
+            },
+            onFetching: () => setLoading(true),
+            onCardTokenChange: () => setLoading(false),
+          },
+        })
+      } catch (err) {
+        console.error('[MP] cardForm init:', err)
+        setError('Erro ao carregar formulário. Recarregue a página.')
+      }
+    }
+
+    const t = setTimeout(mount, 80)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+      cardFormRef.current?.unmount?.()
+      cardFormRef.current = null
+    }
+  }, [metodo]) // eslint-disable-line
+
+  async function processPayment(body) {
+    setLoading(true)
+    setError('')
     try {
-      const res = await fetch('/api/payment', {
+      const res    = await fetch('/api/payment', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          transaction_amount: finalTotal,
-          description:        'Pedido Basic & Bijus',
-          payer: {
-            ...(formData.payer || {}),
-            email:      entrega.email,
-            first_name: entrega.nome.split(' ')[0]  || '',
-            last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
-            identification: {
-              type:   'CPF',
-              number: entrega.cpf.replace(/\D/g, ''),
-            },
-          },
-        }),
+        body:    JSON.stringify(body),
       })
-
       const result = await res.json()
+
+      if (!res.ok) {
+        setError(result.error || `Erro ${res.status} na API de pagamento.`)
+        return
+      }
 
       if (result.status === 'approved') {
         onApproved(result)
       } else if (['pending', 'in_process', 'authorized'].includes(result.status)) {
         onPending(result)
       } else {
-        const detail = result.status_detail || result.message || ''
-        setMpError(
-          detail === 'cc_rejected_insufficient_amount'
-            ? 'Saldo insuficiente no cartão.'
-            : detail === 'cc_rejected_bad_filled_card_number'
-            ? 'Número do cartão inválido.'
-            : detail === 'cc_rejected_bad_filled_security_code'
-            ? 'CVV inválido.'
-            : detail === 'cc_rejected_bad_filled_date'
-            ? 'Data de validade inválida.'
-            : 'Pagamento recusado. Verifique os dados e tente novamente.'
-        )
+        setError(mpRejectMsg(result.status_detail))
       }
     } catch (err) {
-      console.error('[MP] Erro:', err)
-      setMpError('Erro ao processar pagamento. Verifique sua conexão e tente novamente.')
+      setError('Erro de conexão: ' + err.message)
     } finally {
-      setProcessing(false)
+      setLoading(false)
     }
   }
 
-  return (
-    <div className="checkout-form mp-payment-wrap">
+  async function pagarDireto(pmId) {
+    await processPayment({
+      payment_method_id:  pmId,
+      transaction_amount: finalTotal,
+      description:        'Pedido Basic & Bijus',
+      payer: {
+        email:      entrega.email,
+        first_name: entrega.nome.split(' ')[0]  || '',
+        last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
+        identification: { type: 'CPF', number: entrega.cpf.replace(/\D/g, '') },
+      },
+    })
+  }
 
-      {/* Cabeçalho segurança */}
-      <div className="mp-secure-header">
-        <img
-          src="https://http2.mlstatic.com/frontend-assets/mp-checkout-pay/mp-logo.svg"
-          alt="Mercado Pago"
-          className="mp-logo"
-          onError={e => { e.target.style.display = 'none' }}
-        />
-        <span>🔒 Pagamento 100% seguro · SSL</span>
+  return (
+    <div className="checkout-form">
+
+      {/* Seletor de método */}
+      <div className="checkout-form__section">
+        <h3>Forma de pagamento</h3>
+        <div className="payment-methods">
+          {[
+            { id: 'cartao', icon: '💳', label: 'Cartão de crédito / débito', sub: 'até 3× sem juros' },
+            { id: 'pix',    icon: '⚡', label: 'PIX',                        sub: 'aprovação imediata' },
+            { id: 'boleto', icon: '📄', label: 'Boleto bancário',             sub: 'vence em 3 dias úteis' },
+          ].map(m => (
+            <label key={m.id} className={`payment-option${metodo === m.id ? ' active' : ''}`}>
+              <input type="radio" name="metodo" value={m.id}
+                checked={metodo === m.id}
+                onChange={() => { setMetodo(m.id); setError('') }} />
+              <span className="payment-option__icon">{m.icon}</span>
+              <span className="payment-option__text">
+                <strong>{m.label}</strong>
+                <small>{m.sub}</small>
+              </span>
+            </label>
+          ))}
+        </div>
       </div>
 
-      {/* Brick do Mercado Pago */}
-      {!brickReady && (
-        <div className="mp-loading">
-          <span className="cep-spinner" />
-          <span>Carregando opções de pagamento…</span>
+      {/* ── Cartão ── */}
+      {metodo === 'cartao' && (
+        <div className="checkout-form__section">
+          <form id="mp-card-form" autoComplete="off">
+            <div className="checkout-field">
+              <label>Número do cartão</label>
+              <div id="mp-cardNumber" className="mp-iframe-field" />
+            </div>
+            <div className="checkout-field">
+              <label>Nome no cartão</label>
+              <div id="mp-cardholderName" className="mp-iframe-field" />
+            </div>
+            <div className="checkout-field-row">
+              <div className="checkout-field">
+                <label>Validade</label>
+                <div id="mp-expirationDate" className="mp-iframe-field" />
+              </div>
+              <div className="checkout-field checkout-field--sm">
+                <label>CVV</label>
+                <div id="mp-securityCode" className="mp-iframe-field" />
+              </div>
+            </div>
+            <div className="checkout-field">
+              <label>CPF do titular</label>
+              <div id="mp-identificationNumber" className="mp-iframe-field" />
+            </div>
+            <div className="checkout-field">
+              <label>Parcelas</label>
+              <select id="mp-installments" className="mp-installments-select" />
+            </div>
+            {/* Campos ocultos que o MP lê */}
+            <select id="mp-identificationType" style={{ display:'none' }} />
+            <select id="mp-issuer"             style={{ display:'none' }} />
+
+            {error && <p className="field-error mp-field-error">{error}</p>}
+            <button
+              type="submit"
+              className="btn btn--gold btn--full btn--lg"
+              style={{ marginTop: 16 }}
+              disabled={loading}
+            >
+              {loading ? 'Processando…' : `🔒 Pagar R$ ${finalTotal.toFixed(2).replace('.', ',')}`}
+            </button>
+          </form>
         </div>
       )}
 
-      <Payment
-        initialization={{
-          amount: finalTotal,
-          payer: {
-            firstName:      entrega.nome.split(' ')[0]  || '',
-            lastName:       entrega.nome.split(' ').slice(1).join(' ') || '',
-            email:          entrega.email,
-            identification: { type: 'CPF', value: entrega.cpf.replace(/\D/g, '') },
-          },
-        }}
-        customization={{
-          paymentMethods: {
-            creditCard:  'all',
-            debitCard:   'all',
-            ticket:      'all',      // boleto
-            bankTransfer:'all',      // PIX
-            maxInstallments: 3,
-          },
-          visual: {
-            style:         { theme: 'dark' },
-            hideFormTitle: true,
-          },
-        }}
-        onReady={() => setBrickReady(true)}
-        onSubmit={handleSubmit}
-        onError={err => {
-          console.error('[MP Brick]', err)
-          setMpError('Erro no formulário. Recarregue a página e tente novamente.')
-        }}
-      />
-
-      {mpError && (
-        <p className="field-error mp-field-error">{mpError}</p>
-      )}
-
-      {processing && (
-        <div className="mp-processing">
-          <span className="cep-spinner" />
-          <span>Processando pagamento…</span>
+      {/* ── PIX ── */}
+      {metodo === 'pix' && (
+        <div className="checkout-form__section">
+          <div className="tp-info-box">
+            <span className="tp-info-box__icon">⚡</span>
+            <div>
+              <p><strong>Pagamento via PIX</strong></p>
+              <p className="pix-note">Após confirmar, exibiremos o QR Code para você pagar no app do banco.</p>
+              <p className="pix-note" style={{ marginTop:6 }}>
+                Pagador: <strong>{entrega.nome}</strong> · CPF: <strong>{entrega.cpf}</strong>
+              </p>
+            </div>
+          </div>
+          {error && <p className="field-error mp-field-error">{error}</p>}
+          <button
+            className="btn btn--gold btn--full btn--lg"
+            style={{ marginTop: 16 }}
+            onClick={() => pagarDireto('pix')}
+            disabled={loading}
+          >
+            {loading ? 'Gerando PIX…' : `⚡ Gerar QR Code PIX — R$ ${finalTotal.toFixed(2).replace('.', ',')}`}
+          </button>
         </div>
       )}
 
-      <div className="checkout-nav" style={{ marginTop: 16 }}>
-        <button
-          type="button"
-          className="btn btn--ghost"
-          onClick={onBack}
-          disabled={processing}
-        >
+      {/* ── Boleto ── */}
+      {metodo === 'boleto' && (
+        <div className="checkout-form__section">
+          <div className="tp-info-box">
+            <span className="tp-info-box__icon">📄</span>
+            <div>
+              <p><strong>Boleto bancário</strong></p>
+              <p className="pix-note">Gerado na hora, válido por 3 dias úteis.</p>
+              <p className="pix-note" style={{ marginTop:6 }}>
+                Pagador: <strong>{entrega.nome}</strong> · CPF: <strong>{entrega.cpf}</strong>
+              </p>
+            </div>
+          </div>
+          {error && <p className="field-error mp-field-error">{error}</p>}
+          <button
+            className="btn btn--gold btn--full btn--lg"
+            style={{ marginTop: 16 }}
+            onClick={() => pagarDireto('bolbradesco')}
+            disabled={loading}
+          >
+            {loading ? 'Gerando boleto…' : `📄 Gerar Boleto — R$ ${finalTotal.toFixed(2).replace('.', ',')}`}
+          </button>
+        </div>
+      )}
+
+      {!metodo && (
+        <p className="pix-note" style={{ textAlign:'center', padding:'16px 0' }}>
+          ☝️ Selecione uma forma de pagamento acima
+        </p>
+      )}
+
+      <div className="checkout-nav">
+        <button type="button" className="btn btn--ghost" onClick={onBack} disabled={loading}>
           ← Voltar
         </button>
       </div>
