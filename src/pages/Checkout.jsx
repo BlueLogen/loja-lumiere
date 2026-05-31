@@ -472,84 +472,32 @@ function mpRejectMsg(detail = '') {
 // ── STEP 2: PAGAMENTO — Checkout Transparente ─────────────
 function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete }) {
   const finalTotal = subtotal + (frete ?? 0)
-  const [metodo,     setMetodo]     = useState('')
-  const [loading,    setLoading]    = useState(false)
-  const [error,      setError]      = useState('')
-  const cardFormRef  = useRef(null)
-  const mpRef        = useRef(null)
+  const [metodo,  setMetodo]  = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState('')
+  const [card,    setCard]    = useState({ num: '', name: '', exp: '', cvv: '', parcelas: '1' })
 
-  // Monta o cardForm do MP quando cartão for selecionado
-  useEffect(() => {
-    if (metodo !== 'cartao') {
-      cardFormRef.current?.unmount?.()
-      cardFormRef.current = null
+  async function pagarCartao() {
+    if (!card.num || !card.name || !card.exp || !card.cvv) {
+      setError('Preencha todos os dados do cartão.')
       return
     }
-
-    let cancelled = false
-    const mount = () => {
-      if (cancelled || cardFormRef.current) return
-      if (!window.MercadoPago) { setTimeout(mount, 250); return }
-
-      try {
-        mpRef.current = mpRef.current ?? new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' })
-
-        cardFormRef.current = mpRef.current.cardForm({
-          amount: finalTotal.toFixed(2),
-          autoMount: true,
-          form: {
-            id: 'mp-card-form',
-            cardholderName:       { id: 'mp-cardholderName',     placeholder: 'Nome como no cartão' },
-            cardNumber:           { id: 'mp-cardNumber',         placeholder: '0000 0000 0000 0000' },
-            expirationDate:       { id: 'mp-expirationDate',     placeholder: 'MM/AA' },
-            securityCode:         { id: 'mp-securityCode',       placeholder: 'CVV' },
-            installments:         { id: 'mp-installments' },
-            identificationType:   { id: 'mp-identificationType' },
-            identificationNumber: { id: 'mp-identificationNumber', placeholder: '000.000.000-00',
-                                    value: entrega.cpf.replace(/\D/g, '') },
-            issuer:               { id: 'mp-issuer' },
-          },
-          callbacks: {
-            onFormMounted: err => { if (err) console.error('[MP] mount:', err) },
-            onSubmit: async (e) => {
-              e.preventDefault()
-              const d = cardFormRef.current.getCardFormData()
-              if (!d.token) { setError('Verifique os dados do cartão.'); return }
-              await processPayment({
-                token:              d.token,
-                payment_method_id:  d.paymentMethodId,
-                installments:       parseInt(d.installments) || 1,
-                transaction_amount: finalTotal,
-                description:        'Pedido Basic & Bijus',
-                payer: {
-                  email:      entrega.email,
-                  first_name: entrega.nome.split(' ')[0]  || '',
-                  last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
-                  identification: {
-                    type:   d.identificationType  || 'CPF',
-                    number: d.identificationNumber || entrega.cpf.replace(/\D/g, ''),
-                  },
-                },
-              })
-            },
-            onFetching: () => setLoading(true),
-            onCardTokenChange: () => setLoading(false),
-          },
-        })
-      } catch (err) {
-        console.error('[MP] cardForm init:', err)
-        setError('Erro ao carregar formulário. Recarregue a página.')
-      }
-    }
-
-    const t = setTimeout(mount, 80)
-    return () => {
-      cancelled = true
-      clearTimeout(t)
-      cardFormRef.current?.unmount?.()
-      cardFormRef.current = null
-    }
-  }, [metodo]) // eslint-disable-line
+    await processPayment({
+      payment_method_id:  'visa',
+      installments:       parseInt(card.parcelas) || 1,
+      transaction_amount: finalTotal,
+      description:        'Pedido Basic & Bijus',
+      card_number:        card.num.replace(/\s/g, ''),
+      cardholder_name:    card.name,
+      expiration:         card.exp,
+      payer: {
+        email:      entrega.email,
+        first_name: entrega.nome.split(' ')[0]  || '',
+        last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
+        identification: { type: 'CPF', number: entrega.cpf.replace(/\D/g, '') },
+      },
+    })
+  }
 
   async function processPayment(body) {
     setLoading(true)
@@ -629,47 +577,65 @@ function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete
       {/* ── Cartão ── */}
       {metodo === 'cartao' && (
         <div className="checkout-form__section">
-          <form id="mp-card-form" autoComplete="off">
+          <div className="checkout-field">
+            <label>Número do cartão</label>
+            <input
+              placeholder="0000 0000 0000 0000"
+              maxLength={19}
+              value={card.num}
+              onChange={e => setCard(c => ({ ...c, num: maskCard(e.target.value) }))}
+            />
+          </div>
+          <div className="checkout-field">
+            <label>Nome no cartão</label>
+            <input
+              placeholder="Como está impresso no cartão"
+              value={card.name}
+              onChange={e => setCard(c => ({ ...c, name: e.target.value.toUpperCase() }))}
+            />
+          </div>
+          <div className="checkout-field-row">
             <div className="checkout-field">
-              <label>Número do cartão</label>
-              <div id="mp-cardNumber" className="mp-iframe-field" />
+              <label>Validade</label>
+              <input
+                placeholder="MM/AA"
+                maxLength={5}
+                value={card.exp}
+                onChange={e => setCard(c => ({ ...c, exp: maskExp(e.target.value) }))}
+              />
             </div>
-            <div className="checkout-field">
-              <label>Nome no cartão</label>
-              <div id="mp-cardholderName" className="mp-iframe-field" />
+            <div className="checkout-field checkout-field--sm">
+              <label>CVV</label>
+              <input
+                placeholder="123"
+                maxLength={4}
+                value={card.cvv}
+                onChange={e => setCard(c => ({ ...c, cvv: e.target.value.replace(/\D/g, '') }))}
+              />
             </div>
-            <div className="checkout-field-row">
-              <div className="checkout-field">
-                <label>Validade</label>
-                <div id="mp-expirationDate" className="mp-iframe-field" />
-              </div>
-              <div className="checkout-field checkout-field--sm">
-                <label>CVV</label>
-                <div id="mp-securityCode" className="mp-iframe-field" />
-              </div>
-            </div>
-            <div className="checkout-field">
-              <label>CPF do titular</label>
-              <div id="mp-identificationNumber" className="mp-iframe-field" />
-            </div>
-            <div className="checkout-field">
-              <label>Parcelas</label>
-              <select id="mp-installments" className="mp-installments-select" />
-            </div>
-            {/* Campos ocultos que o MP lê */}
-            <select id="mp-identificationType" style={{ display:'none' }} />
-            <select id="mp-issuer"             style={{ display:'none' }} />
-
-            {error && <p className="field-error mp-field-error">{error}</p>}
-            <button
-              type="submit"
-              className="btn btn--gold btn--full btn--lg"
-              style={{ marginTop: 16 }}
-              disabled={loading}
+          </div>
+          <div className="checkout-field">
+            <label>Parcelas</label>
+            <select
+              className="mp-installments-select"
+              value={card.parcelas}
+              onChange={e => setCard(c => ({ ...c, parcelas: e.target.value }))}
             >
-              {loading ? 'Processando…' : `🔒 Pagar R$ ${finalTotal.toFixed(2).replace('.', ',')}`}
-            </button>
-          </form>
+              <option value="1">1× de R$ {finalTotal.toFixed(2).replace('.', ',')} (à vista)</option>
+              <option value="2">2× de R$ {(finalTotal/2).toFixed(2).replace('.', ',')} sem juros</option>
+              <option value="3">3× de R$ {(finalTotal/3).toFixed(2).replace('.', ',')} sem juros</option>
+            </select>
+          </div>
+
+          {error && <p className="field-error mp-field-error">{error}</p>}
+          <button
+            className="btn btn--gold btn--full btn--lg"
+            style={{ marginTop: 16 }}
+            onClick={pagarCartao}
+            disabled={loading}
+          >
+            {loading ? 'Processando…' : `🔒 Pagar R$ ${finalTotal.toFixed(2).replace('.', ',')}`}
+          </button>
         </div>
       )}
 
