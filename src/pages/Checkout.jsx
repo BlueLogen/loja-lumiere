@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
 
-const MP_PUBLIC_KEY = 'APP_USR-40d706cd-153e-4dd8-9953-20a1315ca390'
+const MP_PUBLIC_KEY  = 'APP_USR-40d706cd-153e-4dd8-9953-20a1315ca390'
+const MP_PAYMENT_URL = 'https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/mp-payment'
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
 
@@ -554,7 +555,7 @@ function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete
     setLoading(true)
     setError('')
     try {
-      const res    = await fetch('/api/payment', {
+      const res    = await fetch(MP_PAYMENT_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
