@@ -13,7 +13,7 @@ const ME_TOKEN    = process.env.MELHOR_ENVIO_TOKEN
 const ME_URL      = 'https://melhorenvio.com.br/api/v2/me/shipment/calculate'
 const USER_AGENT  = 'BasicBijus contato@basicbijus.com.br'
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // CORS para dev local
   res.setHeader('Access-Control-Allow-Origin',  '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
