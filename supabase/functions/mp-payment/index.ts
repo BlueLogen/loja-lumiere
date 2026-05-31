@@ -1,8 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-// Token de teste — troque pelo de produção quando quiser
-const MP_TOKEN = Deno.env.get('MP_ACCESS_TOKEN')
-  ?? 'APP_USR-5920068116698450-053116-2e06bd0832ac719f865c2319df7ee314-3440257066'
+const MP_TOKEN = Deno.env.get('MP_ACCESS_TOKEN') ?? ''
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -81,7 +79,7 @@ serve(async (req) => {
     // sandbox_init_point = ambiente de teste / init_point = produção real
     return new Response(JSON.stringify({
       preference_id: data.id,
-      checkout_url:  data.sandbox_init_point ?? data.init_point,
+      checkout_url:  data.init_point,
     }), {
       status: 200,
       headers: { ...CORS, 'Content-Type': 'application/json' },
