@@ -565,9 +565,9 @@ function StepPagamento({ entrega, onApproved, onPending, onBack, subtotal, frete
       if (!res.ok) {
         const msg = result.error || result.message || ''
         setError(
-          msg === 'unauthorized' || res.status === 401
-            ? '⚠️ Erro de autenticação com o Mercado Pago. Verifique se o MP_ACCESS_TOKEN está configurado corretamente no Vercel.'
-            : msg || `Erro ${res.status} na API de pagamento.`
+          (msg === 'unauthorized' || res.status === 401)
+            ? '⚠️ Token do Mercado Pago inválido ou expirado. Gere um novo Access Token em mercadopago.com.br/developers'
+            : msg || `Erro ${res.status}.`
         )
         return
       }
