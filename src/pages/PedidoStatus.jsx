@@ -4,13 +4,19 @@ const INFO = {
   aprovado: {
     icon: '✅',
     title: 'Pagamento aprovado!',
-    sub: 'Seu pedido foi confirmado. Em breve você receberá um e-mail com os detalhes.',
+    sub: 'Seu pedido foi confirmado com sucesso. Em breve você receberá um e-mail.',
     color: '#22c55e',
+  },
+  aguardando: {
+    icon: '⏳',
+    title: 'Aguardando confirmação',
+    sub: 'Seu pedido foi registrado. Assim que o pagamento for confirmado pelo Mercado Pago, você receberá um e-mail.',
+    color: '#f59e0b',
   },
   pendente: {
     icon: '⏳',
     title: 'Pagamento em processamento',
-    sub: 'Seu pedido foi recebido. O pagamento está sendo processado.',
+    sub: 'Seu pedido foi recebido. O pagamento está sendo processado pelo Mercado Pago.',
     color: '#f59e0b',
   },
   recusado: {

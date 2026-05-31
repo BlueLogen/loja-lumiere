@@ -2456,6 +2456,25 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-size: 13px;
 }
 
+/* ── Aguardando pagamento ── */
+.mp-waiting-box {
+  background: var(--surface-2);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 28px 20px 20px;
+  margin-bottom: 8px;
+}
+.mp-waiting-icon { font-size: 48px; margin-bottom: 12px; }
+.mp-waiting-box h3 { font-size: 1.1rem; margin-bottom: 0; }
+.mp-waiting-total {
+  font-size: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+.mp-waiting-total strong { color: var(--gold); font-size: 20px; }
+
 /* ── Checkout Pro box ── */
 .mp-checkout-pro-box {
   background: var(--surface-2);

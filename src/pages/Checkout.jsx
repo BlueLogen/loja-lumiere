@@ -455,10 +455,12 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
 }
 
 // ── STEP 2: PAGAMENTO — Checkout Pro (página do MP) ───────
-function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping }) {
+function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSaveOrder }) {
   const finalTotal = subtotal + (frete ?? 0)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+  const [waiting,   setWaiting]   = useState(false)
+  const [prefId,    setPrefId]    = useState('')
 
   async function irParaMP() {
     setLoading(true)
@@ -479,13 +481,54 @@ function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping }) {
         setError(data.error || 'Erro ao criar preferência de pagamento.')
         return
       }
-      // Redireciona para a página de checkout do Mercado Pago
-      window.location.href = data.checkout_url
+      // Salva pedido como pendente no Supabase
+      await onSaveOrder(data.preference_id)
+      setPrefId(data.preference_id)
+      // Abre o MP em nova aba
+      window.open(data.checkout_url, '_blank')
+      setWaiting(true)
     } catch (err) {
       setError('Erro de conexão: ' + err.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Tela de aguardando pagamento
+  if (waiting) {
+    return (
+      <div className="checkout-form">
+        <div className="checkout-form__section" style={{ textAlign:'center' }}>
+          <div className="mp-waiting-box">
+            <div className="mp-waiting-icon">🔒</div>
+            <h3>Pague na aba do Mercado Pago</h3>
+            <p style={{ color:'var(--gray)', fontSize:13, marginTop:8 }}>
+              Uma nova aba foi aberta com a página de pagamento do Mercado Pago.
+              Após concluir o pagamento, clique no botão abaixo.
+            </p>
+            <div className="mp-waiting-total">
+              Total: <strong>R$ {finalTotal.toFixed(2).replace('.', ',')}</strong>
+            </div>
+          </div>
+
+          <button
+            className="btn btn--gold btn--full btn--lg"
+            style={{ marginTop: 20 }}
+            onClick={() => window.location.href = `/pedido?status=aguardando&pref=${prefId}`}
+          >
+            ✅ Já paguei — ver confirmação
+          </button>
+
+          <button
+            className="btn btn--ghost btn--full"
+            style={{ marginTop: 10 }}
+            onClick={() => { setWaiting(false); setPrefId('') }}
+          >
+            Abrir novamente
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -501,8 +544,8 @@ function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping }) {
           />
           <h3 style={{ marginBottom: 8 }}>Pagamento seguro via Mercado Pago</h3>
           <p style={{ fontSize: 13, color: 'var(--gray)', marginBottom: 20 }}>
-            Você será redirecionado para a página segura do Mercado Pago onde poderá pagar com
-            <strong> cartão, PIX ou boleto</strong>.
+            Abriremos a página segura do Mercado Pago em uma nova aba onde você
+            poderá pagar com <strong>cartão, PIX ou boleto</strong>.
           </p>
 
           <div className="mp-checkout-pro-methods">
@@ -524,7 +567,7 @@ function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping }) {
           onClick={irParaMP}
           disabled={loading}
         >
-          {loading ? 'Redirecionando…' : '🔒 Finalizar no Mercado Pago →'}
+          {loading ? 'Preparando pagamento…' : '🔒 Abrir Mercado Pago →'}
         </button>
       </div>
 
@@ -741,12 +784,10 @@ export default function Checkout() {
     }
   }
 
-  async function confirmOrder(mp) {
+  async function saveOrder(preferenceId) {
     const finalTotal = total + freteVal
     const num = String(Math.floor(Math.random() * 900000) + 100000)
     setOrderNum(num)
-    setMpResult(mp)
-    setSaving(true)
     try {
       await supabase.from('orders').insert({
         order_number:          num,
@@ -761,10 +802,9 @@ export default function Checkout() {
         address_neighborhood:  entrega.bairro,
         address_city:          entrega.cidade,
         address_state:         entrega.estado,
-        payment_method:        mp?.payment_method_id  || 'mercadopago',
-        payment_installments:  mp?.installments       || 1,
-        payment_mp_id:         mp?.id?.toString()     || null,
-        payment_status:        mp?.status             || 'pending',
+        payment_method:        'mercadopago',
+        payment_mp_id:         preferenceId || null,
+        payment_status:        'pending',
         subtotal:              total,
         shipping:              freteVal,
         total:                 finalTotal,
@@ -772,12 +812,9 @@ export default function Checkout() {
       })
     } catch (e) {
       console.error('[Supabase] Erro ao salvar pedido:', e)
-    } finally {
-      setSaving(false)
-      setOpen(false)
-      clearCart()
-      setStep(2)
     }
+    setOpen(false)
+    clearCart()
   }
 
   if (items.length === 0 && step < 2) {
@@ -828,6 +865,7 @@ export default function Checkout() {
               subtotal={total}
               frete={freteVal}
               shipping={selectedShipping}
+              onSaveOrder={saveOrder}
             />
           )}
           {step === 2 && (
