@@ -1,19 +1,71 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const MP_TOKEN   = Deno.env.get('MP_ACCESS_TOKEN')   ?? ''
-const SB_URL     = Deno.env.get('SUPABASE_URL')       ?? ''
-const SB_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+const MP_TOKEN      = Deno.env.get('MP_ACCESS_TOKEN')         ?? ''
+const WEBHOOK_SECRET = Deno.env.get('MP_WEBHOOK_SECRET')      ?? ''
+const SB_URL        = Deno.env.get('SUPABASE_URL')            ?? ''
+const SB_SERVICE    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+// Valida a assinatura HMAC-SHA256 enviada pelo Mercado Pago
+// Docs: https://www.mercadopago.com.br/developers/pt/docs/your-integrations/notifications/webhooks
+async function validateSignature(req: Request, body: { data?: { id?: string } }): Promise<boolean> {
+  if (!WEBHOOK_SECRET) return true // sem secret configurado, aceita tudo
+
+  const xSignature  = req.headers.get('x-signature')  ?? ''
+  const xRequestId  = req.headers.get('x-request-id') ?? ''
+
+  if (!xSignature) return false
+
+  // Extrai ts e v1 do header: "ts=...,v1=..."
+  const parts: Record<string, string> = {}
+  xSignature.split(',').forEach(part => {
+    const [k, v] = part.split('=')
+    if (k && v) parts[k.trim()] = v.trim()
+  })
+
+  const ts = parts['ts']
+  const v1 = parts['v1']
+  if (!ts || !v1) return false
+
+  // Monta a string de assinatura
+  const dataId  = body?.data?.id ?? ''
+  const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`
+
+  // HMAC-SHA256
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(WEBHOOK_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(manifest))
+  const hash = Array.from(new Uint8Array(sig))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+
+  return hash === v1
+}
 
 serve(async (req) => {
-  // MP faz um GET inicial para verificar o endpoint
+  // MP faz GET para verificar o endpoint
   if (req.method === 'GET') {
     return new Response('OK', { status: 200 })
   }
 
+  let body: { type?: string; data?: { id?: string }; action?: string } = {}
+
   try {
-    const body = await req.json()
-    console.log('[Webhook] Recebido:', JSON.stringify(body))
+    body = await req.json()
+    console.log('[Webhook] Notificação:', JSON.stringify(body))
+
+    // Valida a assinatura
+    const valid = await validateSignature(req, body)
+    if (!valid) {
+      console.error('[Webhook] Assinatura inválida!')
+      return new Response('Unauthorized', { status: 401 })
+    }
 
     // Só processa notificações de pagamento
     if (body.type !== 'payment' || !body.data?.id) {
@@ -21,45 +73,45 @@ serve(async (req) => {
     }
 
     const paymentId = String(body.data.id)
+    console.log('[Webhook] Processando payment_id:', paymentId)
 
-    // 1. Busca os detalhes do pagamento no MP
+    // 1. Busca detalhes do pagamento no MP
     const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       headers: { Authorization: `Bearer ${MP_TOKEN}` },
     })
     const payment = await mpRes.json()
-    console.log('[Webhook] Pagamento MP:', payment.id, payment.status, payment.preference_id)
+    console.log('[Webhook] Status MP:', payment.status, '| preference_id:', payment.preference_id)
 
     const preferenceId = payment.preference_id
-    const status       = payment.status        // approved | rejected | pending | in_process
-    const statusDetail = payment.status_detail ?? ''
+    const status       = payment.status // approved | rejected | pending | in_process
 
     if (!preferenceId) {
-      console.error('[Webhook] preference_id não encontrado no pagamento')
+      console.error('[Webhook] preference_id não encontrado')
       return new Response('OK', { status: 200 })
     }
 
-    // 2. Atualiza o pedido no Supabase pelo preference_id
+    // 2. Atualiza o pedido no Supabase
     const sb = createClient(SB_URL, SB_SERVICE)
-    const { data: orders, error } = await sb
+
+    const { data: updated, error } = await sb
       .from('orders')
       .update({
         payment_status: status,
-        payment_mp_id:  paymentId,   // atualiza para o payment_id real
+        payment_mp_id:  paymentId, // substitui preference_id pelo payment_id real
       })
       .eq('payment_mp_id', preferenceId)
-      .select('order_number, customer_email, total')
+      .select('order_number, customer_email, payment_status')
 
     if (error) {
-      console.error('[Webhook] Erro ao atualizar pedido:', error.message)
+      console.error('[Webhook] Erro Supabase:', error.message)
     } else {
-      console.log('[Webhook] Pedido atualizado:', orders)
+      console.log('[Webhook] Pedido atualizado:', JSON.stringify(updated))
     }
 
     return new Response('OK', { status: 200 })
 
   } catch (err) {
     console.error('[Webhook] Erro:', String(err))
-    // Sempre retorna 200 pro MP — se retornar erro ele fica tentando
-    return new Response('OK', { status: 200 })
+    return new Response('OK', { status: 200 }) // sempre 200 pro MP
   }
 })
