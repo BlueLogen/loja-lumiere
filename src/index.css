@@ -1302,6 +1302,105 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .btn--ghost:hover { border-color: var(--black); color: var(--black); }
 
+/* ─── CONFIG PAGE ─── */
+.config-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  min-height: 80vh;
+}
+.config-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.config-header h1 { font-size: 1.4rem; font-family: var(--font-serif); }
+.config-back { font-size: 13px; color: var(--gray); }
+.config-back:hover { color: var(--gold); }
+.config-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.config-section h2 { font-size: 1rem; margin-bottom: 10px; }
+.config-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.config-section-header h2 { margin-bottom: 0; }
+.config-desc { font-size: 13px; color: var(--gray); margin-bottom: 12px; line-height: 1.6; }
+.config-webhook-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+.config-webhook-url {
+  font-size: 12px;
+  color: var(--gold-light);
+  word-break: break-all;
+  flex: 1;
+}
+.config-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.config-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--gray);
+}
+.config-tag--ok { border-color: #22c55e44; color: #22c55e; background: #22c55e11; }
+.config-error   { color: #ef4444; font-size: 13px; margin-bottom: 10px; }
+.config-sync-msg { font-size: 13px; margin-bottom: 10px; padding: 8px 14px; background: var(--surface-2); border-radius: 8px; }
+.config-empty   { color: var(--gray); font-size: 13px; padding: 20px 0; text-align: center; }
+.config-table-wrap { overflow-x: auto; }
+.config-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.config-table th {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--gray);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.config-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.config-table tr:last-child td { border-bottom: none; }
+.config-table tr:hover td { background: var(--surface-2); }
+.config-id, .config-pref {
+  font-family: monospace;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.config-id:hover, .config-pref:hover { color: var(--gold); }
+.config-status { font-weight: 600; font-size: 11px; }
+.config-method {
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--gray);
+}
+.config-email { font-size: 11px; color: var(--gray); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.config-date  { font-size: 11px; color: var(--gray); white-space: nowrap; }
+
 /* ─── FOOTER ─── */
 .footer {
   background: var(--navy-dark);

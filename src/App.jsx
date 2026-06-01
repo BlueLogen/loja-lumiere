@@ -13,6 +13,7 @@ import Admin from './pages/Admin'
 import AdminLogin from './pages/AdminLogin'
 import Checkout from './pages/Checkout'
 import PedidoStatus from './pages/PedidoStatus'
+import Config from './pages/Config'
 import Dash from './pages/Dash'
 
 function ScrollToTop() {
@@ -39,6 +40,7 @@ export default function App() {
         <ScrollToTop />
         <Routes>
           {/* Admin routes — sem header/footer da loja */}
+          <Route path="/config"      element={<Config />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/dash" element={<Dash />} />
