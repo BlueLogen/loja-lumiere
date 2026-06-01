@@ -454,84 +454,170 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
   )
 }
 
-// ── STEP 2: PAGAMENTO — Checkout Pro (página do MP) ───────
+// ── STEP 2: PAGAMENTO — Checkout Transparente ────────────
 function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSaveOrder, onGenerateOrder }) {
   const finalTotal = subtotal + (frete ?? 0)
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState('')
-  const [waiting,   setWaiting]   = useState(false)
-  const [prefId,    setPrefId]    = useState('')
+  const [metodo,   setMetodo]   = useState('')          // cartao | pix | boleto
+  const [card,     setCard]     = useState({ num:'', name:'', exp:'', cvv:'', parcelas:'1' })
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
+  const [result,   setResult]   = useState(null)        // resposta do MP após pagamento
 
-  async function irParaMP() {
-    setLoading(true)
-    setError('')
+  // ── Cartão: tokeniza com o SDK do MP e envia ──
+  async function pagarCartao() {
+    if (!card.num || !card.name || !card.exp || !card.cvv) {
+      setError('Preencha todos os dados do cartão.'); return
+    }
+    setLoading(true); setError('')
     try {
-      // 1. Gera o order ID ANTES de criar a preferência
-      const orderNum = onGenerateOrder()
+      // Tokeniza o cartão via SDK do MP (carregado em index.html)
+      const mp  = new window.MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' })
+      const [month, year] = card.exp.split('/')
+      const bin = card.num.replace(/\s/g,'').slice(0,6)
 
-      // 2. Cria a preferência no MP já com o order ID como external_reference
+      // Detecta bandeira
+      let pmId = 'visa'
+      try {
+        const { results } = await mp.getPaymentMethods({ bin })
+        if (results?.length) pmId = results[0].id
+      } catch (_) {}
+
+      const tokenRes = await mp.createCardToken({
+        cardNumber:           card.num.replace(/\s/g,''),
+        cardholderName:       card.name,
+        cardExpirationMonth:  month.padStart(2,'0'),
+        cardExpirationYear:   year.length === 2 ? '20'+year : year,
+        securityCode:         card.cvv,
+        identificationType:   'CPF',
+        identificationNumber: entrega.cpf.replace(/\D/g,''),
+      })
+
+      await processar({ token: tokenRes.id, payment_method_id: pmId, installments: parseInt(card.parcelas) || 1 })
+    } catch (e) {
+      setError('Erro ao tokenizar cartão: ' + e.message)
+      setLoading(false)
+    }
+  }
+
+  // ── PIX ou Boleto: sem tokenização ──
+  async function pagarDireto(pmId) {
+    setLoading(true); setError('')
+    await processar({ payment_method_id: pmId })
+  }
+
+  // ── Envia para Supabase e processa ──
+  async function processar(extra) {
+    try {
+      const orderNum = onGenerateOrder()
       const res = await fetch(MP_PAYMENT_URL, {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items:        items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
-          payer:        { name: entrega.nome, email: entrega.email, cpf: entrega.cpf.replace(/\D/g,'') },
-          shipping:     shipping ? { name: shipping.name, price: shipping.price } : null,
-          origin:       window.location.origin,
-          order_number: orderNum,   // → vira external_reference no MP
+          ...extra,
+          transaction_amount: finalTotal,
+          description:        'Pedido Basic & Bijus',
+          order_number:       orderNum,
+          payer: {
+            email:      entrega.email,
+            first_name: entrega.nome.split(' ')[0] || '',
+            last_name:  entrega.nome.split(' ').slice(1).join(' ') || '',
+            cpf:        entrega.cpf.replace(/\D/g,''),
+          },
         }),
       })
       const data = await res.json()
-      if (!res.ok || !data.checkout_url) {
-        setError(data.error || 'Erro ao criar preferência de pagamento.')
-        return
+
+      if (!res.ok) { setError(data.error || `Erro ${res.status}`); return }
+
+      if (data.status === 'approved') {
+        await onSaveOrder(orderNum, orderNum, data)
+        setResult({ type:'approved', data })
+      } else if (['pending','in_process','authorized'].includes(data.status)) {
+        await onSaveOrder(orderNum, orderNum, data)
+        setResult({ type:'pending', data })
+      } else {
+        const msgs = {
+          cc_rejected_insufficient_amount: 'Saldo insuficiente.',
+          cc_rejected_bad_filled_card_number: 'Número do cartão inválido.',
+          cc_rejected_bad_filled_security_code: 'CVV incorreto.',
+          cc_rejected_bad_filled_date: 'Data de validade inválida.',
+          cc_rejected_high_risk: 'Pagamento negado pela operadora.',
+        }
+        setError(msgs[data.status_detail] || 'Pagamento não aprovado. Tente novamente.')
       }
-
-      // 3. Salva o pedido no Supabase com o mesmo order ID
-      await onSaveOrder(data.preference_id, orderNum)
-      setPrefId(data.preference_id)
-
-      // 4. Abre o MP em nova aba
-      window.open(data.checkout_url, '_blank')
-      setWaiting(true)
-    } catch (err) {
-      setError('Erro de conexão: ' + err.message)
+    } catch (e) {
+      setError('Erro de conexão: ' + e.message)
     } finally {
       setLoading(false)
     }
   }
 
-  // Tela de aguardando pagamento
-  if (waiting) {
+  // ── Tela PIX ──
+  if (result?.type === 'pending' && result.data.payment_method_id === 'pix') {
+    const d = result.data
     return (
       <div className="checkout-form">
-        <div className="checkout-form__section" style={{ textAlign:'center' }}>
-          <div className="mp-waiting-box">
-            <div className="mp-waiting-icon">🔒</div>
-            <h3>Pague na aba do Mercado Pago</h3>
-            <p style={{ color:'var(--gray)', fontSize:13, marginTop:8 }}>
-              Uma nova aba foi aberta com a página de pagamento do Mercado Pago.
-              Após concluir o pagamento, clique no botão abaixo.
-            </p>
-            <div className="mp-waiting-total">
-              Total: <strong>R$ {finalTotal.toFixed(2).replace('.', ',')}</strong>
+        <div className="checkout-form__section" style={{textAlign:'center'}}>
+          <h3 style={{marginBottom:8}}>⚡ Pague com PIX</h3>
+          <p style={{fontSize:13,color:'var(--gray)',marginBottom:16}}>
+            Escaneie o QR Code ou copie o código
+          </p>
+          {d.qr_code_base64 && (
+            <div style={{display:'flex',justifyContent:'center',marginBottom:16}}>
+              <img src={`data:image/png;base64,${d.qr_code_base64}`} alt="QR PIX"
+                style={{width:180,height:180,border:'3px solid var(--gold)',borderRadius:8,background:'#fff',padding:4}} />
             </div>
-          </div>
+          )}
+          {d.qr_code && (
+            <div className="pix-copy-wrap">
+              <div className="pix-copy-box">
+                <code className="pix-code-text">{d.qr_code.slice(0,50)}…</code>
+                <button className="btn btn--gold" style={{fontSize:12,padding:'6px 14px'}}
+                  onClick={() => navigator.clipboard.writeText(d.qr_code)}>
+                  Copiar
+                </button>
+              </div>
+            </div>
+          )}
+          <p style={{fontSize:12,color:'var(--gray)',marginTop:12}}>
+            ⏱ Código válido por 30 minutos. Após o pagamento, seu pedido é confirmado automaticamente.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
-          <button
-            className="btn btn--gold btn--full btn--lg"
-            style={{ marginTop: 20 }}
-            onClick={() => window.location.href = `/pedido?status=aguardando&pref=${prefId}`}
-          >
-            ✅ Já paguei — ver confirmação
-          </button>
+  // ── Tela Boleto ──
+  if (result?.type === 'pending' && result.data.boleto_url) {
+    return (
+      <div className="checkout-form">
+        <div className="checkout-form__section" style={{textAlign:'center'}}>
+          <h3>📄 Boleto gerado!</h3>
+          <p style={{fontSize:13,color:'var(--gray)',margin:'10px 0 20px'}}>
+            Vencimento em 3 dias úteis.
+          </p>
+          <a href={result.data.boleto_url} target="_blank" rel="noreferrer"
+            className="btn btn--gold btn--full btn--lg">
+            📄 Abrir / Imprimir Boleto
+          </a>
+        </div>
+      </div>
+    )
+  }
 
-          <button
-            className="btn btn--ghost btn--full"
-            style={{ marginTop: 10 }}
-            onClick={() => { setWaiting(false); setPrefId('') }}
-          >
-            Abrir novamente
+  // ── Tela Aprovado ──
+  if (result?.type === 'approved') {
+    return (
+      <div className="checkout-form">
+        <div className="checkout-form__section" style={{textAlign:'center'}}>
+          <div style={{fontSize:56,marginBottom:12}}>✅</div>
+          <h3>Pagamento aprovado!</h3>
+          <p style={{fontSize:13,color:'var(--gray)',marginTop:8}}>
+            Seu pedido foi confirmado. Clique abaixo para continuar.
+          </p>
+          <button className="btn btn--gold btn--full btn--lg" style={{marginTop:20}}
+            onClick={() => window.location.href = '/pedido?status=aprovado'}>
+            Ver meu pedido →
           </button>
         </div>
       </div>
@@ -540,48 +626,119 @@ function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSa
 
   return (
     <div className="checkout-form">
-      <div className="checkout-form__section" style={{ textAlign:'center' }}>
-
-        <div className="mp-checkout-pro-box">
-          <img
-            src="https://http2.mlstatic.com/frontend-assets/mp-checkout-pay/mp-logo.svg"
-            alt="Mercado Pago"
-            style={{ height: 32, margin: '0 auto 16px', display:'block' }}
-            onError={e => { e.currentTarget.style.display = 'none' }}
-          />
-          <h3 style={{ marginBottom: 8 }}>Pagamento seguro via Mercado Pago</h3>
-          <p style={{ fontSize: 13, color: 'var(--gray)', marginBottom: 20 }}>
-            Abriremos a página segura do Mercado Pago em uma nova aba onde você
-            poderá pagar com <strong>cartão, PIX ou boleto</strong>.
-          </p>
-
-          <div className="mp-checkout-pro-methods">
-            <span>💳 Cartão</span>
-            <span>⚡ PIX</span>
-            <span>📄 Boleto</span>
-          </div>
-
-          <div className="mp-checkout-pro-total">
-            Total: <strong>R$ {finalTotal.toFixed(2).replace('.', ',')}</strong>
-          </div>
+      {/* Seletor de método */}
+      <div className="checkout-form__section">
+        <h3>Forma de pagamento</h3>
+        <div className="payment-methods">
+          {[
+            { id:'cartao', icon:'💳', label:'Cartão de crédito / débito', sub:`até 3× sem juros` },
+            { id:'pix',    icon:'⚡', label:'PIX',                        sub:'aprovação imediata' },
+            { id:'boleto', icon:'📄', label:'Boleto bancário',             sub:'vence em 3 dias úteis' },
+          ].map(m => (
+            <label key={m.id} className={`payment-option${metodo===m.id?' active':''}`}>
+              <input type="radio" name="metodo" value={m.id} checked={metodo===m.id}
+                onChange={() => { setMetodo(m.id); setError('') }} />
+              <span className="payment-option__icon">{m.icon}</span>
+              <span className="payment-option__text">
+                <strong>{m.label}</strong><small>{m.sub}</small>
+              </span>
+            </label>
+          ))}
         </div>
-
-        {error && <p className="field-error mp-field-error" style={{ marginTop:12 }}>{error}</p>}
-
-        <button
-          className="btn btn--gold btn--full btn--lg"
-          style={{ marginTop: 20, fontSize: 15 }}
-          onClick={irParaMP}
-          disabled={loading}
-        >
-          {loading ? 'Preparando pagamento…' : '🔒 Abrir Mercado Pago →'}
-        </button>
       </div>
 
+      {/* ── Cartão ── */}
+      {metodo === 'cartao' && (
+        <div className="checkout-form__section">
+          <div className="checkout-field">
+            <label>Número do cartão</label>
+            <input placeholder="0000 0000 0000 0000" maxLength={19}
+              value={card.num} onChange={e => setCard(c=>({...c,num:maskCard(e.target.value)}))} />
+          </div>
+          <div className="checkout-field">
+            <label>Nome no cartão</label>
+            <input placeholder="Como está impresso" value={card.name}
+              onChange={e => setCard(c=>({...c,name:e.target.value.toUpperCase()}))} />
+          </div>
+          <div className="checkout-field-row">
+            <div className="checkout-field">
+              <label>Validade</label>
+              <input placeholder="MM/AA" maxLength={5} value={card.exp}
+                onChange={e => setCard(c=>({...c,exp:maskExp(e.target.value)}))} />
+            </div>
+            <div className="checkout-field checkout-field--sm">
+              <label>CVV</label>
+              <input placeholder="123" maxLength={4} value={card.cvv}
+                onChange={e => setCard(c=>({...c,cvv:e.target.value.replace(/\D/g,'')}))} />
+            </div>
+          </div>
+          <div className="checkout-field">
+            <label>Parcelas</label>
+            <select className="mp-installments-select" value={card.parcelas}
+              onChange={e => setCard(c=>({...c,parcelas:e.target.value}))}>
+              <option value="1">1× de R$ {finalTotal.toFixed(2).replace('.',',')} (à vista)</option>
+              <option value="2">2× de R$ {(finalTotal/2).toFixed(2).replace('.',',')} sem juros</option>
+              <option value="3">3× de R$ {(finalTotal/3).toFixed(2).replace('.',',')} sem juros</option>
+            </select>
+          </div>
+          {error && <p className="field-error mp-field-error">{error}</p>}
+          <button className="btn btn--gold btn--full btn--lg" style={{marginTop:16}}
+            onClick={pagarCartao} disabled={loading}>
+            {loading ? 'Processando…' : `🔒 Pagar R$ ${finalTotal.toFixed(2).replace('.',',')}`}
+          </button>
+        </div>
+      )}
+
+      {/* ── PIX ── */}
+      {metodo === 'pix' && (
+        <div className="checkout-form__section">
+          <div className="tp-info-box">
+            <span className="tp-info-box__icon">⚡</span>
+            <div>
+              <p><strong>PIX — aprovação imediata</strong></p>
+              <p className="pix-note">QR Code gerado na hora. Pague pelo app do banco sem sair daqui.</p>
+              <p className="pix-note" style={{marginTop:4}}>
+                Total: <strong>R$ {finalTotal.toFixed(2).replace('.',',')}</strong>
+              </p>
+            </div>
+          </div>
+          {error && <p className="field-error mp-field-error">{error}</p>}
+          <button className="btn btn--gold btn--full btn--lg" style={{marginTop:16}}
+            onClick={() => pagarDireto('pix')} disabled={loading}>
+            {loading ? 'Gerando QR Code…' : `⚡ Gerar QR Code PIX`}
+          </button>
+        </div>
+      )}
+
+      {/* ── Boleto ── */}
+      {metodo === 'boleto' && (
+        <div className="checkout-form__section">
+          <div className="tp-info-box">
+            <span className="tp-info-box__icon">📄</span>
+            <div>
+              <p><strong>Boleto bancário</strong></p>
+              <p className="pix-note">Gerado na hora, válido por 3 dias úteis.</p>
+              <p className="pix-note" style={{marginTop:4}}>
+                Total: <strong>R$ {finalTotal.toFixed(2).replace('.',',')}</strong>
+              </p>
+            </div>
+          </div>
+          {error && <p className="field-error mp-field-error">{error}</p>}
+          <button className="btn btn--gold btn--full btn--lg" style={{marginTop:16}}
+            onClick={() => pagarDireto('bolbradesco')} disabled={loading}>
+            {loading ? 'Gerando boleto…' : `📄 Gerar Boleto`}
+          </button>
+        </div>
+      )}
+
+      {!metodo && (
+        <p className="pix-note" style={{textAlign:'center',padding:'16px 0'}}>
+          ☝️ Selecione uma forma de pagamento acima
+        </p>
+      )}
+
       <div className="checkout-nav">
-        <button type="button" className="btn btn--ghost" onClick={onBack} disabled={loading}>
-          ← Voltar
-        </button>
+        <button type="button" className="btn btn--ghost" onClick={onBack} disabled={loading}>← Voltar</button>
       </div>
     </div>
   )
@@ -799,7 +956,7 @@ export default function Checkout() {
     return `BB-${date}-${rand}`
   }
 
-  async function saveOrder(preferenceId, num) {
+  async function saveOrder(preferenceId, num, mpData) {
     const finalTotal = total + freteVal
     setOrderNum(num)
     try {
@@ -816,9 +973,9 @@ export default function Checkout() {
         address_neighborhood:  entrega.bairro,
         address_city:          entrega.cidade,
         address_state:         entrega.estado,
-        payment_method:        'mercadopago',
-        payment_mp_id:         preferenceId || null,
-        payment_status:        'pending',
+        payment_method:        mpData?.payment_method_id || 'mercadopago',
+        payment_mp_id:         mpData?.id ? String(mpData.id) : (preferenceId || null),
+        payment_status:        mpData?.status || 'pending',
         subtotal:              total,
         shipping:              freteVal,
         total:                 finalTotal,
