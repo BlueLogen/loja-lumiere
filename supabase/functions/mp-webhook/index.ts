@@ -86,24 +86,32 @@ serve(async (req) => {
     const payment = await mpRes.json()
     console.log('[Webhook] Status MP:', payment.status, '| preference_id:', payment.preference_id)
 
-    const preferenceId = payment.preference_id
-    const status       = payment.status // approved | rejected | pending | in_process
+    const preferenceId      = payment.preference_id
+    const externalReference = payment.external_reference  // order_number BB-YYYYMMDD-XXXXXX
+    const status            = payment.status
+    const mpOrderId         = payment.order?.id ?? null
 
-    if (!preferenceId) {
-      console.error('[Webhook] preference_id não encontrado')
+    console.log('[Webhook] external_reference:', externalReference, '| preference_id:', preferenceId, '| mp_order_id:', mpOrderId)
+
+    // 2. Atualiza pedido no Supabase
+    // Prioridade: external_reference (order_number) → preference_id
+    const sb = createClient(SB_URL, SB_SERVICE)
+
+    const matchField = externalReference ? 'order_number' : 'payment_mp_id'
+    const matchValue = externalReference ? externalReference : preferenceId
+
+    if (!matchValue) {
+      console.error('[Webhook] Sem external_reference nem preference_id')
       return new Response('OK', { status: 200 })
     }
-
-    // 2. Atualiza o pedido no Supabase
-    const sb = createClient(SB_URL, SB_SERVICE)
 
     const { data: updated, error } = await sb
       .from('orders')
       .update({
         payment_status: status,
-        payment_mp_id:  paymentId, // substitui preference_id pelo payment_id real
+        payment_mp_id:  paymentId,
       })
-      .eq('payment_mp_id', preferenceId)
+      .eq(matchField, matchValue)
       .select('order_number, customer_email, payment_status')
 
     if (error) {

@@ -455,7 +455,7 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
 }
 
 // ── STEP 2: PAGAMENTO — Checkout Pro (página do MP) ───────
-function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSaveOrder }) {
+function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSaveOrder, onGenerateOrder }) {
   const finalTotal = subtotal + (frete ?? 0)
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
@@ -466,14 +466,19 @@ function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSa
     setLoading(true)
     setError('')
     try {
+      // 1. Gera o order ID ANTES de criar a preferência
+      const orderNum = onGenerateOrder()
+
+      // 2. Cria a preferência no MP já com o order ID como external_reference
       const res = await fetch(MP_PAYMENT_URL, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items:    items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
-          payer:    { name: entrega.nome, email: entrega.email, cpf: entrega.cpf.replace(/\D/g,'') },
-          shipping: shipping ? { name: shipping.name, price: shipping.price } : null,
-          origin:   window.location.origin,
+          items:        items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+          payer:        { name: entrega.nome, email: entrega.email, cpf: entrega.cpf.replace(/\D/g,'') },
+          shipping:     shipping ? { name: shipping.name, price: shipping.price } : null,
+          origin:       window.location.origin,
+          order_number: orderNum,   // → vira external_reference no MP
         }),
       })
       const data = await res.json()
@@ -481,10 +486,12 @@ function StepPagamento({ entrega, items, onBack, subtotal, frete, shipping, onSa
         setError(data.error || 'Erro ao criar preferência de pagamento.')
         return
       }
-      // Salva pedido como pendente no Supabase
-      await onSaveOrder(data.preference_id)
+
+      // 3. Salva o pedido no Supabase com o mesmo order ID
+      await onSaveOrder(data.preference_id, orderNum)
       setPrefId(data.preference_id)
-      // Abre o MP em nova aba
+
+      // 4. Abre o MP em nova aba
       window.open(data.checkout_url, '_blank')
       setWaiting(true)
     } catch (err) {
@@ -784,9 +791,16 @@ export default function Checkout() {
     }
   }
 
-  async function saveOrder(preferenceId) {
+  // Gera ID único de venda: BB-YYYYMMDD-XXXXXX
+  function generateOrderNumber() {
+    const now = new Date()
+    const date = now.toISOString().slice(0,10).replace(/-/g,'')
+    const rand = Math.floor(Math.random() * 900000) + 100000
+    return `BB-${date}-${rand}`
+  }
+
+  async function saveOrder(preferenceId, num) {
     const finalTotal = total + freteVal
-    const num = String(Math.floor(Math.random() * 900000) + 100000)
     setOrderNum(num)
     try {
       await supabase.from('orders').insert({
@@ -866,6 +880,7 @@ export default function Checkout() {
               frete={freteVal}
               shipping={selectedShipping}
               onSaveOrder={saveOrder}
+              onGenerateOrder={generateOrderNumber}
             />
           )}
           {step === 2 && (

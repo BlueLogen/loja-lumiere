@@ -12,7 +12,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
-    const { items, payer, shipping, origin } = await req.json()
+    const { items, payer, shipping, origin, order_number } = await req.json()
 
     // Monta os itens para o MP
     const mpItems = items.map((i: {id:number,name:string,qty:number,price:number}) => ({
@@ -56,6 +56,7 @@ serve(async (req) => {
         installments: 3,
       },
       statement_descriptor: 'BASIC E BIJUS',
+      external_reference:  order_number ?? '',   // ID do pedido na sua loja
       notification_url: 'https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/mp-webhook',
     }
 
