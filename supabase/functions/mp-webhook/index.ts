@@ -97,13 +97,22 @@ serve(async (req) => {
     // Prioridade: external_reference (order_number) → preference_id
     const sb = createClient(SB_URL, SB_SERVICE)
 
-    const matchField = externalReference ? 'order_number' : 'payment_mp_id'
-    const matchValue = externalReference ? externalReference : preferenceId
+    // Prioridade de match: external_reference → preference_id → payment_mp_id (payment_id direto)
+    let matchField: string
+    let matchValue: string | null
 
-    if (!matchValue) {
-      console.error('[Webhook] Sem external_reference nem preference_id')
-      return new Response('OK', { status: 200 })
+    if (externalReference) {
+      matchField = 'order_number'
+      matchValue = externalReference
+    } else if (preferenceId) {
+      matchField = 'payment_mp_id'
+      matchValue = preferenceId
+    } else {
+      matchField = 'payment_mp_id'
+      matchValue = paymentId  // último recurso: payment_id direto
     }
+
+    console.log('[Webhook] Buscando pedido por', matchField, '=', matchValue)
 
     const { data: updated, error } = await sb
       .from('orders')
