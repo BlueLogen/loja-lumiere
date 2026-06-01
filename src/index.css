@@ -1383,6 +1383,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .config-table tr:last-child td { border-bottom: none; }
 .config-table tr:hover td { background: var(--surface-2); }
+.config-id--order { color: var(--gold) !important; }
 .config-id, .config-pref {
   font-family: monospace;
   font-size: 11px;

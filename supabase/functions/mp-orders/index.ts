@@ -37,17 +37,22 @@ serve(async (req) => {
       id: number; status: string; status_detail: string;
       payment_method_id: string; transaction_amount: number;
       date_created: string; date_approved: string | null;
-      preference_id: string; payer: { email: string }
+      preference_id: string; payer: { email: string };
+      order: { id: number; type: string } | null;
+      external_reference: string | null;
     }) => ({
-      mp_id:             p.id,
-      status:            p.status,
-      status_detail:     p.status_detail,
-      method:            p.payment_method_id,
-      amount:            p.transaction_amount,
-      date_created:      p.date_created,
-      date_approved:     p.date_approved,
-      preference_id:     p.preference_id,
-      payer_email:       p.payer?.email,
+      mp_id:              p.id,
+      mp_order_id:        p.order?.id ?? null,
+      mp_order_type:      p.order?.type ?? null,
+      status:             p.status,
+      status_detail:      p.status_detail,
+      method:             p.payment_method_id,
+      amount:             p.transaction_amount,
+      date_created:       p.date_created,
+      date_approved:      p.date_approved,
+      preference_id:      p.preference_id,
+      external_reference: p.external_reference,
+      payer_email:        p.payer?.email,
     }))
 
     return json({ total: data.paging?.total ?? 0, payments })

@@ -128,13 +128,13 @@ export default function Config() {
           <table className="config-table">
             <thead>
               <tr>
-                <th>MP ID</th>
+                <th>Payment ID</th>
+                <th>Order ID (MP)</th>
                 <th>Status</th>
                 <th>Valor</th>
                 <th>Método</th>
                 <th>Pagador</th>
                 <th>Data</th>
-                <th>Preference ID</th>
                 <th>Ação</th>
               </tr>
             </thead>
@@ -143,23 +143,29 @@ export default function Config() {
                 <tr key={p.mp_id}>
                   <td>
                     <code className="config-id" onClick={() => copied(String(p.mp_id))} title="Clique para copiar">
-                      {p.mp_id}
+                      #{p.mp_id}
                     </code>
+                  </td>
+                  <td>
+                    {p.mp_order_id
+                      ? <code className="config-id config-id--order" onClick={() => copied(String(p.mp_order_id))} title="Clique para copiar">
+                          🛒 {p.mp_order_id}
+                        </code>
+                      : <span style={{color:'var(--gray)'}}>—</span>
+                    }
                   </td>
                   <td>
                     <span className="config-status" style={{ color: STATUS_COLOR[p.status] ?? '#888' }}>
                       {STATUS_LABEL[p.status] ?? p.status}
                     </span>
+                    {p.status_detail && (
+                      <small style={{display:'block',color:'var(--gray)',fontSize:10}}>{p.status_detail}</small>
+                    )}
                   </td>
-                  <td>{fmt(p.amount)}</td>
+                  <td><strong>{fmt(p.amount)}</strong></td>
                   <td><span className="config-method">{p.method}</span></td>
                   <td className="config-email">{p.payer_email ?? '—'}</td>
                   <td className="config-date">{fmtDate(p.date_created)}</td>
-                  <td>
-                    <code className="config-pref" onClick={() => copied(p.preference_id ?? '')} title="Clique para copiar">
-                      {p.preference_id ? p.preference_id.slice(0, 20) + '…' : '—'}
-                    </code>
-                  </td>
                   <td>
                     {p.preference_id && (
                       <button
@@ -168,7 +174,7 @@ export default function Config() {
                         onClick={() => syncPayment(p)}
                         disabled={syncing === p.mp_id}
                       >
-                        {syncing === p.mp_id ? '…' : 'Sync'}
+                        {syncing === p.mp_id ? '…' : '↺ Sync'}
                       </button>
                     )}
                   </td>
