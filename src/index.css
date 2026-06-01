@@ -1456,6 +1456,22 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .config-copy-btn:hover { color: var(--gold); }
 
+/* Campo raw JSON */
+.cfg-field {
+  display: flex; align-items: baseline;
+  gap: 8px; padding: 2px 0;
+  border-bottom: 1px solid #1a1a1a;
+  font-family: monospace; font-size: 11px;
+}
+.cfg-field:last-child { border-bottom: none; }
+.cfg-field__key  { color: #7dd3fc; flex-shrink: 0; min-width: 160px; }
+.cfg-field__val  { color: #fcd34d; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cfg-copy {
+  background: none; border: none; cursor: pointer;
+  color: #444; font-size: 11px; padding: 0 2px; flex-shrink: 0;
+}
+.cfg-copy:hover { color: var(--gold); }
+
 /* ─── FOOTER ─── */
 .footer {
   background: var(--navy-dark);
