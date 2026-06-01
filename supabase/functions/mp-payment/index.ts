@@ -56,6 +56,7 @@ serve(async (req) => {
         installments: 3,
       },
       statement_descriptor: 'BASIC E BIJUS',
+      notification_url: 'https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/mp-webhook',
     }
 
     const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
