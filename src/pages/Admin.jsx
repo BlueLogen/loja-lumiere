@@ -22,11 +22,11 @@ const EMPTY = {
 
 const BADGE_PRESETS = [
   { label: 'Promoção', color: '#02AAD7' },
-  { label: 'Novo',     color: '#2d6a4f' },
-  { label: 'Mais vendido', color: '#8b1a1a' },
-  { label: 'Edição limitada', color: '#1a3a5c' },
-  { label: 'Conjunto', color: '#5c3d1a' },
-  { label: 'Kit',      color: '#5c3d1a' },
+  { label: 'Novo',     color: '#02AAD7' },
+  { label: 'Mais vendido', color: '#003D64' },
+  { label: 'Edição limitada', color: '#003D64' },
+  { label: 'Conjunto', color: '#003D64' },
+  { label: 'Kit',      color: '#003D64' },
 ]
 
 const ALL_SIZES = ['PP', 'P', 'M', 'G', 'GG', 'XGG']
