@@ -19,7 +19,7 @@ export default function ProductCard({ product }) {
 
         {product.badge && (
           <span className="product-card__badge"
-            style={{ background: product.badgeColor || '#c9a84c' }}>
+            style={{ background: product.badgeColor || '#02AAD7' }}>
             {product.badge}
           </span>
         )}

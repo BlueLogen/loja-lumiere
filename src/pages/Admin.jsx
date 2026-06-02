@@ -12,7 +12,7 @@ const EMPTY = {
   images: ['', ''],
   description: '',
   badge: '',
-  badgeColor: '#c9a84c',
+  badgeColor: '#02AAD7',
   featured: false,
   material: '',
   stone: '',
@@ -21,7 +21,7 @@ const EMPTY = {
 }
 
 const BADGE_PRESETS = [
-  { label: 'Promoção', color: '#c9a84c' },
+  { label: 'Promoção', color: '#02AAD7' },
   { label: 'Novo',     color: '#2d6a4f' },
   { label: 'Mais vendido', color: '#8b1a1a' },
   { label: 'Edição limitada', color: '#1a3a5c' },

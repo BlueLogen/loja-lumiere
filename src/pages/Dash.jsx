@@ -9,11 +9,11 @@ const AUTH_KEY = 'dash_auth'
 const EMPTY = {
   name:'', category:'colares', price:'', originalPrice:'',
   image:'', images:['',''], description:'', badge:'',
-  badgeColor:'#c9a84c', featured:false, material:'',
+  badgeColor:'#02AAD7', featured:false, material:'',
   stone:'', hasSizes:false, sizes:[], sizePrices:{}, sold:'',
 }
 const BADGE_PRESETS = [
-  { label:'Promoção',       color:'#c9a84c' },
+  { label:'Promoção',       color:'#02AAD7' },
   { label:'Novo',           color:'#2d6a4f' },
   { label:'Mais vendido',   color:'#8b1a1a' },
   { label:'Edição limitada',color:'#1a3a5c' },

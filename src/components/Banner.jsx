@@ -10,7 +10,7 @@ const FIXED_SLIDES = [
     name:  'Coleção Exclusiva',
     price: null,
     badge: 'Novo',
-    badgeColor: '#c9a84c',
+    badgeColor: '#02AAD7',
     link:  '/produtos',
     fixed: true,
   },
@@ -114,7 +114,7 @@ export default function Banner() {
                 {p.badge && (
                   <span
                     className="banner-hero__badge"
-                    style={{ background: p.badgeColor || '#c9a84c' }}
+                    style={{ background: p.badgeColor || '#02AAD7' }}
                   >
                     {p.badge}
                   </span>

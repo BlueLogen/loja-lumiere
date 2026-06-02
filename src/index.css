@@ -6,8 +6,9 @@
   --navy-dark: #000000;
   --navy-light: #2a2a2a;
   --navy-pale: #1e1e1e;
-  --gold: #c9a84c;
-  --gold-light: #f0d98b;
+  --gold: #02AAD7;
+  --gold-light: #4dd4f0;
+  --gold-dark: #003D64;
   --black: #0e0e0e;
   --dark: #111111;
   --gray: #888888;
@@ -45,7 +46,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 100;
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  background: linear-gradient(135deg, #001e35 0%, #003D64 100%);
   height: var(--header-h);
 }
 .header__top {
@@ -1216,7 +1217,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   justify-content: space-between;
   padding: 16px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  background: linear-gradient(135deg, #001e35 0%, #003D64 100%);
 }
 .cart__header h2 {
   font-family: var(--font-serif);
@@ -1849,7 +1850,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
 /* Header */
 .admin-header {
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  background: linear-gradient(135deg, #001e35 0%, #003D64 100%);
   color: var(--white);
   padding: 0 20px;
   height: 60px;
@@ -2378,7 +2379,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   position: sticky;
   top: 0;
   z-index: 50;
-  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+  background: linear-gradient(135deg, #001e35 0%, #003D64 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2856,7 +2857,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   }
 }
 .btn--bursting {
-  background: linear-gradient(135deg, #f0d98b, var(--gold)) !important;
+  background: linear-gradient(135deg, #4dd4f0, var(--gold)) !important;
   transform: scale(1.06) !important;
   box-shadow: 0 0 32px rgba(201,168,76,.6) !important;
 }
@@ -3190,7 +3191,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* ── Image Drop Zone ───────────────────────────────────── */
 .img-drop-zone { position:relative; cursor:pointer; border-radius:10px; border:2px dashed #cbd5e1; background:#f8fafc; transition:border-color .2s,background .2s; overflow:hidden; min-height:130px; display:flex; align-items:center; justify-content:center; }
 .img-drop-zone:hover { border-color:var(--gold); background:#fffbf0; }
-.img-drop-zone.drag-over { border-color:var(--gold); background:#fef9ec; box-shadow:0 0 0 3px #c9a84c33; }
+.img-drop-zone.drag-over { border-color:var(--gold); background:#fef9ec; box-shadow:0 0 0 3px #02AAD733; }
 .img-drop-zone.uploading { pointer-events:none; }
 .img-drop-zone__empty { text-align:center; padding:24px 16px; }
 .img-drop-zone__icon { font-size:2rem; display:block; margin-bottom:8px; }
