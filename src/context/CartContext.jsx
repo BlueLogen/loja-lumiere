@@ -1,16 +1,41 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 const CartContext = createContext()
+const CART_KEY = 'bb_cart'
+
+function loadCart() {
+  try {
+    const saved = localStorage.getItem(CART_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+function saveCart(items) {
+  try {
+    localStorage.setItem(CART_KEY, JSON.stringify(items))
+  } catch {}
+}
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([])
-  const [open, setOpen] = useState(false)
+  const [items, setItems] = useState(loadCart)
+  const [open,  setOpen]  = useState(false)
+
+  // Persiste no localStorage sempre que o carrinho mudar
+  useEffect(() => {
+    saveCart(items)
+  }, [items])
 
   function addItem(product) {
     setItems(prev => {
-      const existing = prev.find(i => i.id === product.id)
+      const existing = prev.find(i => i.id === product.id && i.selectedSize === product.selectedSize)
       if (existing) {
-        return prev.map(i => i.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+        return prev.map(i =>
+          i.id === product.id && i.selectedSize === product.selectedSize
+            ? { ...i, qty: i.qty + 1 }
+            : i
+        )
       }
       return [...prev, { ...product, qty: 1 }]
     })
@@ -26,7 +51,10 @@ export function CartProvider({ children }) {
     setItems(prev => prev.map(i => i.id === id ? { ...i, qty } : i))
   }
 
-  function clearCart() { setItems([]) }
+  function clearCart() {
+    setItems([])
+    localStorage.removeItem(CART_KEY)
+  }
 
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0)
   const count = items.reduce((sum, i) => sum + i.qty, 0)
