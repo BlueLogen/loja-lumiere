@@ -125,7 +125,7 @@ serve(async (req) => {
     return json({
       mode:          'pro',
       preference_id: data.id,
-      checkout_url:  data.sandbox_init_point ?? data.init_point,
+      checkout_url:  data.init_point,
     })
 
   } catch (err) {

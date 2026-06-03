@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
 
-const MP_PUBLIC_KEY  = 'TEST-74f694a3-69ba-4f4d-836b-7c362b56b73c'
+const MP_PUBLIC_KEY  = 'APP_USR-01687f18-e372-44a8-be2a-805f615459ed'
 const MP_PAYMENT_URL = 'https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/mp-payment'
 
 const STEPS = ['Entrega', 'Pagamento', 'Confirmação']
