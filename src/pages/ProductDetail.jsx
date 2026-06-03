@@ -87,9 +87,6 @@ export default function ProductDetail() {
             </span>
           )}
         </div>
-        <p className="detail-info__installment">
-          ou 3x de R$ {(finalPrice / 3).toFixed(2).replace('.', ',')} sem juros
-        </p>
         <p className="detail-info__sold">{sold.toLocaleString()}+ vendidos</p>
 
         <div className="detail-info__specs">
@@ -119,7 +116,7 @@ export default function ProductDetail() {
                     <span>{s}</span>
                     {sizePrice != null && (
                       <small className="size-btn__extra">
-                        R${Number(sizePrice).toFixed(0)}
+                        R${Number(sizePrice).toFixed(2).replace('.', ',')}
                       </small>
                     )}
                   </button>
@@ -148,7 +145,6 @@ export default function ProductDetail() {
       <div className="detail-sticky">
         <div className="detail-sticky__price">
           <span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
-          <small>3x sem juros</small>
         </div>
         <button
           className={`btn btn--gold detail-sticky__btn${added ? ' btn--added' : ''}`}

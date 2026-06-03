@@ -67,9 +67,6 @@ export default function ProductCard({ product }) {
             </span>
           </div>
 
-          <span className="product-card__installment">
-            em 3× de R$ {installment} <em>sem juros</em>
-          </span>
         </div>
 
         {/* Vendidos */}
