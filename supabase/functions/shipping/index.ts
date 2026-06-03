@@ -30,7 +30,12 @@ serve(async (req) => {
       })
     }
 
-    const weight = Math.max(0.1, Number(item_count) * 0.15)
+    // Dimensões fixas do pacote padrão da loja
+    const qty    = Math.max(1, Number(item_count))
+    const weight = 0.5 * qty          // 0,5 kg por item
+    const height = 9                  // cm
+    const width  = 13                 // cm
+    const length = 18 * qty           // comprimento cresce com qtd
 
     const meRes = await fetch(ME_URL, {
       method: 'POST',
@@ -43,9 +48,9 @@ serve(async (req) => {
       body: JSON.stringify({
         from:    { postal_code: STORE_CEP },
         to:      { postal_code: cep },
-        package: { height: 4, width: 14, length: 20, weight },
+        package: { height, width, length, weight },
         options: { insurance_value: Number(subtotal) || 0, receipt: false, own_hand: false },
-        services: '1,2,17', // PAC, SEDEX, Mini Envios
+        services: '1,2', // PAC e SEDEX (Mini Envios nao aceita altura 9cm)
       }),
     })
 
