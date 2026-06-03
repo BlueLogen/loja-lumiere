@@ -3021,6 +3021,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   margin-top: calc(-1 * var(--header-h));
   margin-bottom: calc(-1 * var(--bottom-nav-h));
   padding-top: 0;
+  /* Sobrescreve tokens do dark mode para fundo claro do Dash */
+  --text:       #1a202c;
+  --text-muted: #4a5568;
+  --gray:       #718096;
+  --border:     #e2e8f0;
+  --surface:    #ffffff;
+  --surface-2:  #f7fafc;
+  color: #1a202c;
 }
 .dash-side {
   width: 230px; flex-shrink: 0;
