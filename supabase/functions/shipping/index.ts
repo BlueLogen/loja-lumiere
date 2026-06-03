@@ -43,7 +43,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from:    { postal_code: STORE_CEP },
         to:      { postal_code: cep },
-        package: { height: 10, width: 20, length: 15, weight },
+        package: { height: 4, width: 14, length: 20, weight },
         options: { insurance_value: Number(subtotal) || 0, receipt: false, own_hand: false },
         services: '1,2,17', // PAC, SEDEX, Mini Envios
       }),
