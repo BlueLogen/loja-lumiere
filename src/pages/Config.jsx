@@ -13,20 +13,20 @@ const R  = (v) => v != null && v !== '' ? `R$ ${Number(v).toFixed(2).replace('.'
 
 // Renderiza qualquer valor recursivamente
 function Val({ v, depth = 0 }) {
-  if (v === null || v === undefined) return <span style={{color:'#555'}}>null</span>
-  if (typeof v === 'boolean') return <span style={{color: v ? '#22c55e' : '#ef4444'}}>{String(v)}</span>
-  if (typeof v === 'number') return <span style={{color:'#60a5fa'}}>{v}</span>
+  if (v === null || v === undefined) return <span style={{color:'#9ca3af',fontStyle:'italic'}}>null</span>
+  if (typeof v === 'boolean') return <span style={{color: v ? '#4ade80' : '#f87171'}}>{String(v)}</span>
+  if (typeof v === 'number') return <span style={{color:'#93c5fd'}}>{v}</span>
   if (typeof v === 'string') {
-    if (v === '') return <span style={{color:'#555'}}>""</span>
+    if (v === '') return <span style={{color:'#9ca3af',fontStyle:'italic'}}>&quot;&quot;</span>
     return <span style={{color:'#fcd34d'}}>{v}</span>
   }
   if (Array.isArray(v)) {
-    if (v.length === 0) return <span style={{color:'#555'}}>[]</span>
+    if (v.length === 0) return <span style={{color:'#9ca3af',fontStyle:'italic'}}>[]</span>
     return (
       <div style={{marginLeft: 12 + depth * 4}}>
         {v.map((item, i) => (
-          <div key={i} style={{borderLeft:'1px solid #333', paddingLeft:8, marginBottom:2}}>
-            <span style={{color:'#6b7280',fontSize:9}}>[{i}]</span>
+          <div key={i} style={{borderLeft:'1px solid #2a2a2a', paddingLeft:8, marginBottom:2}}>
+            <span style={{color:'#9ca3af',fontSize:9}}>[{i}]</span>
             {typeof item === 'object' && item !== null
               ? <Fields obj={item} depth={depth+1} />
               : <> <Val v={item} depth={depth+1} /></>
@@ -101,8 +101,8 @@ function PaymentRow({ p, onSync, syncing }) {
       {open && (
         <tr className="config-detail-row">
           <td colSpan={8}>
-            <div style={{padding:'16px 20px', background:'#0d0d0d', borderBottom:'1px solid var(--border)'}}>
-              <p style={{fontSize:11,color:'var(--gray)',marginBottom:10}}>
+            <div style={{padding:'16px 20px', background:'#111', borderBottom:'1px solid var(--border)'}}>
+              <p style={{fontSize:11,color:'#9ca3af',marginBottom:10}}>
                 Objeto completo retornado pelo Mercado Pago — todos os campos
               </p>
               <Fields obj={p} />

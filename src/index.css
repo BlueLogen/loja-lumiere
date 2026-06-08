@@ -1309,6 +1309,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   margin: 0 auto;
   padding: 24px 16px 60px;
   min-height: 80vh;
+  background: #0a0a0a;
+  color: var(--text);
 }
 .config-header {
   display: flex;
@@ -1373,7 +1375,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   text-align: left;
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
-  color: var(--gray);
+  color: var(--text-muted);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1381,6 +1383,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   padding: 9px 10px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  color: var(--text);
 }
 .config-table tr:last-child td { border-bottom: none; }
 .config-table tr:hover td { background: var(--surface-2); }
@@ -1465,11 +1468,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-family: monospace; font-size: 11px;
 }
 .cfg-field:last-child { border-bottom: none; }
-.cfg-field__key  { color: #7dd3fc; flex-shrink: 0; min-width: 160px; }
+.cfg-field__key  { color: #93c5fd; flex-shrink: 0; min-width: 160px; }
 .cfg-field__val  { color: #fcd34d; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .cfg-copy {
   background: none; border: none; cursor: pointer;
-  color: #444; font-size: 11px; padding: 0 2px; flex-shrink: 0;
+  color: #666; font-size: 11px; padding: 0 2px; flex-shrink: 0;
 }
 .cfg-copy:hover { color: var(--gold); }
 
