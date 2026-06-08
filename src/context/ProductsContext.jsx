@@ -33,6 +33,7 @@ function fromDB(p) {
     sizes:         p.sizes,
     sizePrices:    p.size_prices || null,
     sold:          p.sold,
+    stock:         p.stock ?? 0,
   }
 }
 
