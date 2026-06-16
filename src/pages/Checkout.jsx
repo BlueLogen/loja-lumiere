@@ -99,35 +99,6 @@ function normalizeME(data, subtotal) {
   return opts
 }
 
-// ── Fallback estático (caso API falhe) ─────────────────────
-const UF_TIER = {
-  SP:1, MG:2, RJ:2, ES:2, PR:2, SC:2, RS:2,
-  GO:3, MT:3, MS:3, DF:3,
-  BA:4, PE:4, CE:4, MA:4, PB:4, RN:4, AL:4, SE:4, PI:4,
-  PA:5, AM:5, TO:5, RO:5, AC:6, RR:6, AP:6,
-}
-const FRETE_TIERS = [
-  { pac:[12.90,3,5],  mini:[15.90,2,4],  sedex:[22.90,1,2]  },
-  { pac:[15.90,4,7],  mini:[19.90,3,5],  sedex:[27.90,1,3]  },
-  { pac:[19.90,5,8],  mini:[23.90,4,6],  sedex:[32.90,2,4]  },
-  { pac:[22.90,6,10], mini:[27.90,5,8],  sedex:[37.90,2,5]  },
-  { pac:[26.90,7,12], mini:[31.90,6,9],  sedex:[42.90,3,6]  },
-  { pac:[31.90,8,15], mini:[38.90,7,11], sedex:[52.90,4,8]  },
-]
-function staticFreteOptions(uf, subtotal) {
-  const t = FRETE_TIERS[(UF_TIER[uf] ?? 4) - 1]
-  const opts = [
-    { id:'pac',   icon:'📦', name:'PAC',         carrier:'Correios', price:t.pac[0],   days:`${t.pac[1]} a ${t.pac[2]} dias úteis`   },
-    { id:'mini',  icon:'📬', name:'Mini Envios', carrier:'Correios', price:t.mini[0],  days:`${t.mini[1]} a ${t.mini[2]} dias úteis`  },
-    { id:'sedex', icon:'⚡', name:'SEDEX',       carrier:'Correios', price:t.sedex[0], days:`${t.sedex[1]} a ${t.sedex[2]} dias úteis` },
-  ]
-  if (subtotal >= 299) {
-    opts.unshift({ id:'gratis', icon:'🎉', name:'PAC Grátis', carrier:'Correios', price:0,
-      days:`${t.pac[1]} a ${t.pac[2]} dias úteis`, free:true })
-  }
-  return opts
-}
-
 // ── Máscaras ──────────────────────────────────────────────
 function maskCep(v) {
   const d = v.replace(/\D/g, '').slice(0, 8)
@@ -234,7 +205,8 @@ function OrderSummary({ items, subtotal, selectedShipping }) {
 
 // ── STEP 1: ENTREGA ───────────────────────────────────────
 function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount,
-                       selectedShipping, onSelectShipping, freteOpts, freteLoading }) {
+                       selectedShipping, onSelectShipping, freteOpts, freteLoading,
+                       freteApiError, onRetryFrete }) {
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError,   setCepError]   = useState('')
   const [freteError, setFreteError] = useState('')
@@ -406,6 +378,13 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
             <div className="frete-loading">
               <span className="frete-loading__spinner" />
               <span>Calculando frete com Melhor Envio…</span>
+            </div>
+          ) : freteApiError ? (
+            <div className="frete-error-box">
+              <span>⚠️ {freteApiError}</span>
+              <button type="button" className="btn btn--ghost frete-retry-btn" onClick={onRetryFrete}>
+                Tentar novamente
+              </button>
             </div>
           ) : (
             <div className="frete-options">
@@ -704,8 +683,9 @@ export default function Checkout() {
     bairro: '', cidade: '', estado: '',
   })
   const [selectedShipping, setSelectedShipping] = useState(null)
-  const [freteOpts,   setFreteOpts]   = useState([])
+  const [freteOpts,    setFreteOpts]    = useState([])
   const [freteLoading, setFreteLoading] = useState(false)
+  const [freteApiError, setFreteApiError] = useState('')
 
   const freteVal    = selectedShipping?.price ?? 0
   const freteTimer  = useRef(null)
@@ -737,6 +717,8 @@ export default function Checkout() {
     if (cepDigits.length !== 8 || !estado) return
     setFreteLoading(true)
     setSelectedShipping(null)
+    setFreteOpts([])
+    setFreteApiError('')
     const ctrl = new AbortController()
     const tid  = setTimeout(() => ctrl.abort(), 10000)
     try {
@@ -752,14 +734,19 @@ export default function Checkout() {
       })
       clearTimeout(tid)
       const data = await res.json()
-      if (res.ok && Array.isArray(data) && data.length > 0) {
-        setFreteOpts(normalizeME(data, total))
+      const valid = normalizeME(data, total)
+      if (res.ok && valid.length > 0) {
+        setFreteOpts(valid)
       } else {
-        setFreteOpts(staticFreteOptions(estado, total))
+        setFreteApiError('Não foi possível calcular o frete. Tente novamente.')
       }
-    } catch {
+    } catch (err) {
       clearTimeout(tid)
-      setFreteOpts(staticFreteOptions(estado, total))
+      setFreteApiError(
+        err?.name === 'AbortError'
+          ? 'Tempo esgotado ao calcular frete. Verifique sua conexão e tente novamente.'
+          : 'Erro ao calcular frete. Tente novamente.'
+      )
     } finally {
       setFreteLoading(false)
     }
@@ -843,6 +830,8 @@ export default function Checkout() {
               onSelectShipping={setSelectedShipping}
               freteOpts={freteOpts}
               freteLoading={freteLoading}
+              freteApiError={freteApiError}
+              onRetryFrete={() => fetchFrete(entrega.cep, entrega.estado)}
             />
           )}
           {step === 1 && (

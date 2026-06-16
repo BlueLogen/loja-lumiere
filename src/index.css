@@ -2911,6 +2911,30 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   flex-shrink: 0;
 }
 
+/* Erro de frete */
+.frete-error-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  background: #2a1010;
+  border: 1px solid #7f1d1d55;
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: .88rem;
+}
+.frete-retry-btn {
+  margin-left: auto;
+  font-size: .82rem;
+  padding: 6px 14px;
+  border: 1px solid #fca5a5 !important;
+  color: #fca5a5 !important;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.frete-retry-btn:hover { background: #3d1515 !important; }
+
 /* Frete subtitle */
 .frete-subtitle {
   font-size: .8rem;
