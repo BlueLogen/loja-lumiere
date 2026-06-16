@@ -1476,6 +1476,86 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .cfg-copy:hover { color: var(--gold); }
 
+/* ─── ORDER DETAIL PANEL ─── */
+.order-detail-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0;
+  background: #111;
+  border-bottom: 1px solid var(--border);
+}
+.order-detail-group {
+  padding: 16px 20px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.order-detail-group:last-child { border-right: none; }
+.order-detail-group h4 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.order-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.order-detail-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.order-detail-field span { color: var(--gray); flex-shrink: 0; }
+.order-detail-field strong { color: var(--text); text-align: right; word-break: break-all; }
+.order-detail-address {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.7;
+}
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.order-item-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.order-item-row:last-child { border-bottom: none; }
+.order-item-qty  { color: var(--gold); font-weight: 700; flex-shrink: 0; min-width: 24px; }
+.order-item-name { color: var(--text); flex: 1; }
+.order-item-price { color: var(--text); font-weight: 600; flex-shrink: 0; }
+.order-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.order-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 3px 0;
+}
+.order-total-row span:first-child { color: var(--gray); }
+.order-total-row span:last-child, .order-total-row code { color: var(--text); }
+.order-total-row--total {
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 8px;
+  font-size: 13px;
+}
+.order-total-row--total span { color: var(--text); font-weight: 600; }
+.order-total-row--total strong { color: #4ade80; font-size: 14px; }
+
 /* ─── FOOTER ─── */
 .footer {
   background: var(--navy-dark);
