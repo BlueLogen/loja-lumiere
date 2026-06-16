@@ -2585,7 +2585,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   background: var(--surface);
   outline: none;
   transition: border-color .2s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Restore native select arrow (iOS Safari) */
+.checkout-field select {
+  -webkit-appearance: menulist-button;
   appearance: auto;
+  padding-right: 28px;
 }
 .checkout-field input:focus,
 .checkout-field select:focus { border-color: var(--gold); }

@@ -246,8 +246,11 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
     if (digits.length !== 8) return
     setCepLoading(true)
     setCepError('')
+    const ctrl = new AbortController()
+    const tid  = setTimeout(() => ctrl.abort(), 8000)
     try {
-      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: ctrl.signal })
+      clearTimeout(tid)
       const json = await res.json()
       if (json.erro) {
         setCepError('CEP não encontrado. Verifique e tente novamente.')
@@ -261,8 +264,13 @@ function StepEntrega({ data, onChange, onBulkChange, onNext, subtotal, itemCount
         })
         onSelectShipping(null)
       }
-    } catch {
-      setCepError('Erro ao consultar CEP. Verifique sua conexão.')
+    } catch (err) {
+      clearTimeout(tid)
+      setCepError(
+        err?.name === 'AbortError'
+          ? 'Tempo esgotado ao consultar CEP. Preencha o endereço manualmente.'
+          : 'Erro ao consultar CEP. Preencha o endereço manualmente.'
+      )
     } finally {
       setCepLoading(false)
     }
@@ -525,6 +533,28 @@ function mpMethodLabel(id = '') {
   return map[id] || id.toUpperCase()
 }
 
+// Copia texto para o clipboard com fallback para navegadores sem Clipboard API
+function copyToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).catch(() => copyFallback(text))
+  } else {
+    copyFallback(text)
+  }
+}
+function copyFallback(text) {
+  try {
+    const el = document.createElement('textarea')
+    el.value = text
+    el.setAttribute('readonly', '')
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0'
+    document.body.appendChild(el)
+    el.focus()
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+  } catch {}
+}
+
 // ── STEP 3: CONFIRMAÇÃO ───────────────────────────────────
 function StepConfirmacao({ entrega, items, subtotal, shipping, orderNum, mpResult }) {
   const freteVal   = shipping?.price ?? 0
@@ -561,7 +591,7 @@ function StepConfirmacao({ entrega, items, subtotal, shipping, orderNum, mpResul
                     <button
                       className="btn btn--gold"
                       style={{ fontSize: 12, padding: '6px 14px' }}
-                      onClick={() => navigator.clipboard.writeText(pixData.qr_code)}
+                      onClick={() => copyToClipboard(pixData.qr_code)}
                     >
                       Copiar
                     </button>
@@ -677,17 +707,29 @@ export default function Checkout() {
   const [freteOpts,   setFreteOpts]   = useState([])
   const [freteLoading, setFreteLoading] = useState(false)
 
-  const freteVal = selectedShipping?.price ?? 0
+  const freteVal    = selectedShipping?.price ?? 0
+  const freteTimer  = useRef(null)
+
+  // Dispara o cálculo de frete sempre que CEP ou estado mudar
+  // Funciona para auto-preenchimento via ViaCEP E para seleção manual de estado
+  useEffect(() => {
+    const cepDigits = entrega.cep.replace(/\D/g, '')
+    if (entrega.estado && cepDigits.length === 8) {
+      clearTimeout(freteTimer.current)
+      freteTimer.current = setTimeout(
+        () => fetchFrete(entrega.cep, entrega.estado),
+        300
+      )
+    }
+    return () => clearTimeout(freteTimer.current)
+  }, [entrega.cep, entrega.estado])
 
   function handleEntregaChange(field, val) {
     setEntrega(p => ({ ...p, [field]: val }))
   }
   function handleEntregaBulk(fields) {
     setEntrega(p => ({ ...p, ...fields }))
-    // Trigger frete fetch when CEP resolves via ViaCEP bulk update
-    if (fields.estado && fields.cep) {
-      fetchFrete(fields.cep, fields.estado)
-    }
+    // fetchFrete é disparado pelo useEffect que observa entrega.cep + entrega.estado
   }
 
   async function fetchFrete(cep, estado) {
@@ -695,8 +737,10 @@ export default function Checkout() {
     if (cepDigits.length !== 8 || !estado) return
     setFreteLoading(true)
     setSelectedShipping(null)
+    const ctrl = new AbortController()
+    const tid  = setTimeout(() => ctrl.abort(), 10000)
     try {
-      const res  = await fetch('https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/shipping', {
+      const res = await fetch('https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/shipping', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -704,15 +748,17 @@ export default function Checkout() {
           subtotal:    total,
           item_count:  items.reduce((s, i) => s + i.qty, 0),
         }),
+        signal: ctrl.signal,
       })
+      clearTimeout(tid)
       const data = await res.json()
       if (res.ok && Array.isArray(data) && data.length > 0) {
         setFreteOpts(normalizeME(data, total))
       } else {
-        // API respondeu mas sem opções válidas → fallback estático
         setFreteOpts(staticFreteOptions(estado, total))
       }
     } catch {
+      clearTimeout(tid)
       setFreteOpts(staticFreteOptions(estado, total))
     } finally {
       setFreteLoading(false)
