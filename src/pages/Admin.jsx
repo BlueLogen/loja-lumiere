@@ -1,7 +1,120 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProducts } from '../context/ProductsContext'
+import { supabase } from '../lib/supabase'
 import { isAdminAuth } from './AdminLogin'
+
+const STATUS_COLOR = { approved:'#22c55e', rejected:'#ef4444', pending:'#f59e0b', in_process:'#3b82f6', cancelled:'#6b7280', refunded:'#8b5cf6' }
+const STATUS_LABEL = { approved:'✅ Aprovado', rejected:'❌ Recusado', pending:'⏳ Pendente', in_process:'🔄 Em processo', cancelled:'🚫 Cancelado', refunded:'↩️ Estornado' }
+
+const cpText = (v) => navigator.clipboard?.writeText(String(v)).catch(() => {})
+const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'
+const fmtR = (v) => v != null && v !== '' ? `R$ ${Number(v).toFixed(2).replace('.',',')}` : '—'
+
+function OrderRow({ o }) {
+  const [open, setOpen] = useState(false)
+  const status = o.payment_status ?? 'pending'
+  const items  = Array.isArray(o.items) ? o.items : []
+
+  return (
+    <>
+      <tr className={`config-row${open ? ' config-row--open' : ''}`} onClick={() => setOpen(s => !s)}>
+        <td><span className="config-expand">{open ? '▼' : '▶'}</span></td>
+        <td>
+          <code className="config-id" onClick={e => { e.stopPropagation(); cpText(o.order_number) }} title="Copiar nº pedido">
+            {o.order_number}
+          </code>
+        </td>
+        <td>
+          <span className="config-status" style={{ color: STATUS_COLOR[status] ?? '#888' }}>
+            {STATUS_LABEL[status] ?? status}
+          </span>
+        </td>
+        <td>
+          <strong style={{ fontSize: 12 }}>{o.customer_name}</strong>
+          <small style={{ display: 'block', color: 'var(--gray)', fontSize: 10 }}>{o.customer_email}</small>
+        </td>
+        <td><strong>{fmtR(o.total)}</strong></td>
+        <td className="config-date">{fmtDate(o.created_at)}</td>
+      </tr>
+
+      {open && (
+        <tr className="config-detail-row">
+          <td colSpan={6}>
+            <div className="order-detail-panel">
+
+              <div className="order-detail-group">
+                <h4>👤 Cliente</h4>
+                <div className="order-detail-grid">
+                  <div className="order-detail-field"><span>Nome</span><strong>{o.customer_name}</strong></div>
+                  <div className="order-detail-field"><span>Email</span>
+                    <strong style={{ cursor: 'pointer' }} onClick={() => cpText(o.customer_email)}>{o.customer_email} <small>⎘</small></strong>
+                  </div>
+                  <div className="order-detail-field"><span>Telefone</span><strong>{o.customer_phone || '—'}</strong></div>
+                  <div className="order-detail-field"><span>CPF</span><strong>{o.customer_cpf || '—'}</strong></div>
+                </div>
+              </div>
+
+              <div className="order-detail-group">
+                <h4>📍 Endereço de entrega</h4>
+                <div className="order-detail-address">
+                  {o.address_street}, {o.address_number}
+                  {o.address_complement ? ` — ${o.address_complement}` : ''}
+                  <br />
+                  {o.address_neighborhood} · {o.address_city}/{o.address_state} · CEP {o.address_cep}
+                </div>
+              </div>
+
+              <div className="order-detail-group">
+                <h4>🛍️ Itens comprados</h4>
+                <div className="order-items-list">
+                  {items.length === 0
+                    ? <span style={{ color: 'var(--gray)', fontSize: 12 }}>Sem itens</span>
+                    : items.map((item, i) => (
+                      <div key={i} className="order-item-row">
+                        <span className="order-item-qty">{item.qty}×</span>
+                        <span className="order-item-name">{item.name}</span>
+                        <span className="order-item-price">{fmtR(Number(item.price) * Number(item.qty))}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+
+              <div className="order-detail-group">
+                <h4>💰 Valores e pagamento</h4>
+                <div className="order-totals">
+                  <div className="order-total-row"><span>Subtotal</span><span>{fmtR(o.subtotal)}</span></div>
+                  <div className="order-total-row"><span>Frete</span><span>{o.shipping > 0 ? fmtR(o.shipping) : <span style={{ color: '#4ade80' }}>Grátis</span>}</span></div>
+                  <div className="order-total-row order-total-row--total"><span>Total</span><strong>{fmtR(o.total)}</strong></div>
+                  <div className="order-total-row" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+                    <span>Método</span>
+                    <span style={{ textTransform: 'capitalize' }}>{o.payment_method || '—'}</span>
+                  </div>
+                  {o.payment_mp_id && (
+                    <div className="order-total-row">
+                      <span>ID MP</span>
+                      <code className="config-id" style={{ fontSize: 11 }} onClick={() => cpText(o.payment_mp_id)}>
+                        {o.payment_mp_id} <small>⎘</small>
+                      </code>
+                    </div>
+                  )}
+                  <div className="order-total-row">
+                    <span>Estoque debitado</span>
+                    <span style={{ color: o.stock_decremented ? '#4ade80' : '#f59e0b' }}>
+                      {o.stock_decremented ? '✅ Sim' : '⏳ Não'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
 
 const EMPTY = {
   name: '',
@@ -35,8 +148,8 @@ export default function Admin() {
   const navigate = useNavigate()
   const { products, addProduct, updateProduct, deleteProduct, categories } = useProducts()
 
-  const [view, setView]         = useState('list') // 'list' | 'form'
-  const [editing, setEditing]   = useState(null)   // product id or null
+  const [view, setView]         = useState('list') // 'list' | 'form' | 'orders'
+  const [editing, setEditing]   = useState(null)
   const [form, setForm]         = useState(EMPTY)
   const [filterCat, setFilterCat] = useState('todos')
   const [search, setSearch]     = useState('')
@@ -44,9 +157,30 @@ export default function Admin() {
   const [confirmDel, setConfirmDel] = useState(null)
   const [imgPreview, setImgPreview] = useState('')
 
+  const [orders, setOrders]             = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [ordersError, setOrdersError]   = useState('')
+
   useEffect(() => {
     if (!isAdminAuth()) navigate('/admin/login')
   }, [])
+
+  async function fetchOrders() {
+    setOrdersLoading(true); setOrdersError('')
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+      if (error) throw new Error(error.message)
+      setOrders(data ?? [])
+    } catch (e) {
+      setOrdersError('Erro ao carregar pedidos: ' + e.message)
+    } finally {
+      setOrdersLoading(false)
+    }
+  }
 
   useEffect(() => {
     setImgPreview(form.image)
@@ -138,6 +272,59 @@ export default function Admin() {
   const filtered = products
     .filter(p => filterCat === 'todos' || p.category === filterCat)
     .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()))
+
+  // ── ORDERS VIEW ───────────────────────────────────────────
+  if (view === 'orders') {
+    const approved = orders.filter(o => o.payment_status === 'approved').length
+    const pending  = orders.filter(o => o.payment_status === 'pending').length
+    const revenue  = orders.filter(o => o.payment_status === 'approved').reduce((s, o) => s + Number(o.total || 0), 0)
+
+    return (
+      <div className="admin-page">
+        <div className="admin-header">
+          <button className="admin-back" onClick={() => setView('list')}>← Produtos</button>
+          <h1>📦 Pedidos</h1>
+          <div className="admin-header__actions">
+            <button className="btn btn--ghost" onClick={fetchOrders} disabled={ordersLoading} style={{ fontSize: 13 }}>
+              {ordersLoading ? '⏳' : '🔄 Atualizar'}
+            </button>
+            <button className="admin-logout" onClick={logout}>Sair</button>
+          </div>
+        </div>
+
+        <div className="admin-stats">
+          <div className="admin-stat"><strong>{orders.length}</strong><span>Total</span></div>
+          <div className="admin-stat"><strong style={{ color: '#22c55e' }}>{approved}</strong><span>Aprovados</span></div>
+          <div className="admin-stat"><strong style={{ color: '#f59e0b' }}>{pending}</strong><span>Pendentes</span></div>
+          <div className="admin-stat"><strong style={{ color: '#93c5fd', fontSize: '1rem' }}>R$ {revenue.toFixed(2).replace('.', ',')}</strong><span>Receita</span></div>
+        </div>
+
+        {ordersError && <p className="config-error" style={{ margin: '0 16px 12px' }}>{ordersError}</p>}
+
+        {!ordersLoading && orders.length === 0 && !ordersError && (
+          <p className="config-empty" style={{ textAlign: 'center', padding: 40, color: 'var(--gray)' }}>Nenhum pedido encontrado.</p>
+        )}
+
+        <div className="config-table-wrap" style={{ margin: '0 0 32px' }}>
+          <table className="config-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Nº Pedido</th>
+                <th>Status</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map(o => <OrderRow key={o.id ?? o.order_number} o={o} />)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
 
   // ── FORM VIEW ──────────────────────────────────────────────
   if (view === 'form') {
@@ -386,6 +573,7 @@ export default function Admin() {
           <h1>Admin</h1>
         </div>
         <div className="admin-header__actions">
+          <button className="admin-btn-secondary" onClick={() => { setView('orders'); fetchOrders() }}>📦 Pedidos</button>
           <a href="/" target="_blank" className="admin-btn-secondary">Ver loja ↗</a>
           <button className="admin-logout" onClick={logout}>Sair</button>
         </div>
