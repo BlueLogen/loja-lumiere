@@ -1,26 +1,49 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const ADMIN_PASS = 'lumiere2025'
-const SESSION_KEY = 'lumiere_admin_auth'
+const AUTH_URL    = 'https://mvtdqwedgdcxjfvhfrdp.supabase.co/functions/v1/admin-auth'
+const SESSION_KEY = 'lumiere_admin_token'
 
 export function isAdminAuth() {
-  return sessionStorage.getItem(SESSION_KEY) === 'true'
+  const token = sessionStorage.getItem(SESSION_KEY)
+  if (!token) return false
+  // Token format: "{timestamp}.{hmac}" — valida que não é muito antigo (8h)
+  const ts = parseInt(token.split('.')[0], 10)
+  if (!ts || Date.now() - ts > 8 * 60 * 60 * 1000) {
+    sessionStorage.removeItem(SESSION_KEY)
+    return false
+  }
+  return true
 }
 
 export default function AdminLogin() {
-  const [pass, setPass] = useState('')
-  const [error, setError] = useState(false)
+  const [pass,    setPass]    = useState('')
+  const [error,   setError]   = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    if (pass === ADMIN_PASS) {
-      sessionStorage.setItem(SESSION_KEY, 'true')
-      navigate('/admin')
-    } else {
-      setError(true)
-      setPass('')
+    setLoading(true)
+    setError('')
+    try {
+      const res  = await fetch(AUTH_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ password: pass }),
+      })
+      const data = await res.json()
+      if (data.ok && data.token) {
+        sessionStorage.setItem(SESSION_KEY, data.token)
+        navigate('/admin')
+      } else {
+        setError('Senha incorreta')
+        setPass('')
+      }
+    } catch {
+      setError('Erro de conexão. Tente novamente.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -38,14 +61,16 @@ export default function AdminLogin() {
               type="password"
               placeholder="Digite a senha..."
               value={pass}
-              onChange={e => { setPass(e.target.value); setError(false) }}
+              onChange={e => { setPass(e.target.value); setError('') }}
               autoFocus
+              disabled={loading}
             />
-            {error && <span className="admin-field__error">Senha incorreta</span>}
+            {error && <span className="admin-field__error">{error}</span>}
           </div>
-          <button type="submit" className="btn btn--gold btn--full">Entrar</button>
+          <button type="submit" className="btn btn--gold btn--full" disabled={loading}>
+            {loading ? 'Verificando…' : 'Entrar'}
+          </button>
         </form>
-        <p className="admin-login__hint">Senha padrão: <code>lumiere2025</code></p>
       </div>
     </div>
   )
