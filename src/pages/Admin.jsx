@@ -13,6 +13,7 @@ const fmtR = (v) => v != null && v !== '' ? `R$ ${Number(v).toFixed(2).replace('
 
 function OrderRow({ o }) {
   const [open, setOpen] = useState(false)
+  const [lightbox, setLightbox] = useState(null)
   const { products } = useProducts()
   const productMap = Object.fromEntries(products.map(p => [String(p.id), p]))
   const status = o.payment_status ?? 'pending'
@@ -39,6 +40,17 @@ function OrderRow({ o }) {
         <td><strong>{fmtR(o.total)}</strong></td>
         <td className="config-date">{fmtDate(o.created_at)}</td>
       </tr>
+
+      {lightbox && (
+        <tr>
+          <td colSpan={6} style={{ padding: 0, border: 'none' }}>
+            <div className="order-lightbox" onClick={() => setLightbox(null)}>
+              <img src={lightbox} alt="Produto" className="order-lightbox__img" />
+              <button className="order-lightbox__close" onClick={() => setLightbox(null)}>✕</button>
+            </div>
+          </td>
+        </tr>
+      )}
 
       {open && (
         <tr className="config-detail-row">
@@ -75,7 +87,12 @@ function OrderRow({ o }) {
                     : items.map((item, i) => (
                       <div key={i} className="order-item-row">
                         {(item.image || productMap[String(item.id)]?.image)
-                          ? <img src={item.image || productMap[String(item.id)]?.image} alt={item.name} className="order-item-thumb" />
+                          ? <img
+                              src={item.image || productMap[String(item.id)]?.image}
+                              alt={item.name}
+                              className="order-item-thumb order-item-thumb--clickable"
+                              onClick={() => setLightbox(item.image || productMap[String(item.id)]?.image)}
+                            />
                           : <span className="order-item-thumb order-item-thumb--empty" />}
                         <span className="order-item-qty">{item.qty}×</span>
                         <span className="order-item-name">{item.name}</span>
