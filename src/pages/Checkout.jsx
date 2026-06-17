@@ -55,7 +55,9 @@ const SERVICE_ICON = {
   'PAC':         '📦',
   'SEDEX':       '⚡',
   'Mini Envios': '📬',
-  '.Package':    '📦',
+  '.Package':    '🚚',
+  '.Com':        '🚚',
+  'Jadlog':      '🚚',
   'Impresso':    '📮',
 }
 function serviceIcon(name = '') {
@@ -689,17 +691,21 @@ export default function Checkout() {
 
   const freteVal    = selectedShipping?.price ?? 0
   const freteTimer  = useRef(null)
+  const lastFreteCep = useRef('')
 
   // Dispara o cálculo de frete sempre que CEP ou estado mudar
   // Funciona para auto-preenchimento via ViaCEP E para seleção manual de estado
   useEffect(() => {
     const cepDigits = entrega.cep.replace(/\D/g, '')
     if (entrega.estado && cepDigits.length === 8) {
+      // Só recalcula se o CEP ou estado realmente mudou desde o último cálculo
+      const key = cepDigits + entrega.estado
+      if (key === lastFreteCep.current) return
       clearTimeout(freteTimer.current)
-      freteTimer.current = setTimeout(
-        () => fetchFrete(entrega.cep, entrega.estado),
-        300
-      )
+      freteTimer.current = setTimeout(() => {
+        lastFreteCep.current = key
+        fetchFrete(entrega.cep, entrega.estado)
+      }, 300)
     }
     return () => clearTimeout(freteTimer.current)
   }, [entrega.cep, entrega.estado])

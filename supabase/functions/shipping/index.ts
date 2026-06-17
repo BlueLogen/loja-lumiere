@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
         to:      { postal_code: cep },
         package: { height, width, length, weight },
         options: { insurance_value: Number(subtotal) || 0, receipt: false, own_hand: false },
-        services: '1,2', // PAC e SEDEX (Mini Envios nao aceita altura 9cm)
+        services: '1,2,3,4', // PAC, SEDEX, Jadlog .Package, Jadlog .Com
       }),
       signal: ctrl.signal,
     })
