@@ -1,5 +1,3 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-
 const MP_TOKEN = Deno.env.get('MP_ACCESS_TOKEN') ?? ''
 
 const CORS = {
@@ -15,7 +13,7 @@ function json(data: unknown, status = 200) {
   })
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
