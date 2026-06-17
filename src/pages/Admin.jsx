@@ -72,6 +72,9 @@ function OrderRow({ o }) {
                     ? <span style={{ color: 'var(--gray)', fontSize: 12 }}>Sem itens</span>
                     : items.map((item, i) => (
                       <div key={i} className="order-item-row">
+                        {item.image
+                          ? <img src={item.image} alt={item.name} className="order-item-thumb" />
+                          : <span className="order-item-thumb order-item-thumb--empty" />}
                         <span className="order-item-qty">{item.qty}×</span>
                         <span className="order-item-name">{item.name}</span>
                         <span className="order-item-price">{fmtR(Number(item.price) * Number(item.qty))}</span>

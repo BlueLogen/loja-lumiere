@@ -790,7 +790,7 @@ export default function Checkout() {
         shipping:              freteVal,
         shipping_name:         selectedShipping?.name ?? null,
         total:                 finalTotal,
-        items:                 items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+        items:                 items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price, image: i.image ?? null })),
       })
     } catch (e) {
       console.error('[Supabase] Erro ao salvar pedido:', e)
