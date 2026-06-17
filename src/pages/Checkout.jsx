@@ -788,6 +788,7 @@ export default function Checkout() {
         payment_status:        mpData?.status || 'pending',
         subtotal:              total,
         shipping:              freteVal,
+        shipping_name:         selectedShipping?.name ?? null,
         total:                 finalTotal,
         items:                 items.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
       })

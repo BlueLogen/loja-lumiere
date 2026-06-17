@@ -85,7 +85,10 @@ function OrderRow({ o }) {
                 <h4>💰 Valores e pagamento</h4>
                 <div className="order-totals">
                   <div className="order-total-row"><span>Subtotal</span><span>{fmtR(o.subtotal)}</span></div>
-                  <div className="order-total-row"><span>Frete</span><span>{o.shipping > 0 ? fmtR(o.shipping) : <span style={{ color: '#4ade80' }}>Grátis</span>}</span></div>
+                  <div className="order-total-row">
+                    <span>Frete{o.shipping_name ? <small style={{ color: 'var(--gray)', fontWeight: 400 }}> · {o.shipping_name}</small> : ''}</span>
+                    <span>{o.shipping > 0 ? fmtR(o.shipping) : <span style={{ color: '#4ade80' }}>Grátis</span>}</span>
+                  </div>
                   <div className="order-total-row order-total-row--total"><span>Total</span><strong>{fmtR(o.total)}</strong></div>
                   <div className="order-total-row" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
                     <span>Método</span>
