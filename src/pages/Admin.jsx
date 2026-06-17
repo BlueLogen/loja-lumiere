@@ -13,6 +13,8 @@ const fmtR = (v) => v != null && v !== '' ? `R$ ${Number(v).toFixed(2).replace('
 
 function OrderRow({ o }) {
   const [open, setOpen] = useState(false)
+  const { products } = useProducts()
+  const productMap = Object.fromEntries(products.map(p => [String(p.id), p]))
   const status = o.payment_status ?? 'pending'
   const items  = Array.isArray(o.items) ? o.items : []
 
@@ -72,8 +74,8 @@ function OrderRow({ o }) {
                     ? <span style={{ color: 'var(--gray)', fontSize: 12 }}>Sem itens</span>
                     : items.map((item, i) => (
                       <div key={i} className="order-item-row">
-                        {item.image
-                          ? <img src={item.image} alt={item.name} className="order-item-thumb" />
+                        {(item.image || productMap[String(item.id)]?.image)
+                          ? <img src={item.image || productMap[String(item.id)]?.image} alt={item.name} className="order-item-thumb" />
                           : <span className="order-item-thumb order-item-thumb--empty" />}
                         <span className="order-item-qty">{item.qty}×</span>
                         <span className="order-item-name">{item.name}</span>
